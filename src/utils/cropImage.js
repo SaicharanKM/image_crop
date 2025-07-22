@@ -1,8 +1,6 @@
 export const getCroppedImg = (imageSrc, pixelCrop, targetWidth = 300, targetHeight = 300) => {
   return new Promise((resolve, reject) => {
     const image = new Image();
-
-    // Ensures cross-origin images work
     image.crossOrigin = "anonymous";
     image.src = imageSrc;
 
