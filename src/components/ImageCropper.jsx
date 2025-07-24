@@ -15,6 +15,7 @@ function ImageCropper() {
     const [targetWidth, setTargetWidth] = useState(300);
     const [targetHeight, setTargetHeight] = useState(300);
     const [isDragging, setIsDragging] = useState(false);
+    const [selectedLabel, setSelectedLabel] = useState(null);
 
 
     const lastBlobUrlRef = useRef(null);
@@ -110,7 +111,7 @@ function ImageCropper() {
                 <h5 className="text-1xl font-bold text-white text-center">The Ultimate Tool for Resizing and Cropping at the Same Time </h5> */}
 
                 <div
-                    className={`upload-section h-[320px] max-w-[900px] w-full mx-auto mt-4 p-6 
+                    className={`upload-section h-[520px] max-w-[900px] w-full mx-auto mt-4 p-6 
   border-3 ${isDragging ?
                             "border-yellow-500 bg-yellow-50 shadow-[0_0_15px_rgba(245,158,11,0.5)]" :
                             "border-gray-300 bg-gradient-to-br from-gray-50 to-white"
@@ -137,24 +138,21 @@ function ImageCropper() {
                             <div className="flex flex-col items-center text-[#1f2932]">
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
-                                    className="h-16 w-16 mb-4 text-dark  animate-bounce"
-                                    fill="none"
+                                    className="h-16 w-16 mb-4 text-dark animate-bounce"
                                     viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                    strokeWidth={1.5}
+                                    fill="currentColor"
                                 >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M3 15.75V6.75A2.25 2.25 0 015.25 4.5h13.5A2.25 2.25 0 0121 6.75v8.25M3 15.75l4.72-4.72a.75.75 0 011.06 0L12 15.75l3.22-3.22a.75.75 0 011.06 0L21 15.75M3 15.75V18a2.25 2.25 0 002.25 2.25h13.5A2.25 2.25 0 0021 18v-2.25"
-                                    />
+                                    <path d="M12 3L7 8h3v4h4V8h3l-5-5zM5 18h14v2H5z" />
                                 </svg>
+
+
+
                                 <p className="text-lg font-semibold mb-2">Upload an Image</p>
                                 <p className="text-sm text-gray-600 mb-2">
                                     Drag & Drop your image here, or click below to browse.
                                 </p>
 
-                                 <h5 className="text-1xl font-bold text-gray-700 text-center">The Ultimate Tool for Resizing and Cropping at the Same Time </h5> 
+                                <h5 className="text-1xl font-bold text-gray-700 text-center">The Ultimate Tool for Resizing and Cropping at the Same Time </h5>
                             </div>
 
                             <label
@@ -173,7 +171,7 @@ function ImageCropper() {
                         </>
                     ) : (
                         <>
-                            <div className="crop-container mt-6 relative w-full max-w-[800px] h-[600px] mx-auto">
+                            <div className="crop-container mt-2 relative w-full max-w-[950px] h-[700px] mx-auto">
                                 <Cropper
                                     image={image}
                                     crop={crop}
@@ -202,7 +200,7 @@ function ImageCropper() {
                                             <CloudUploadIcon fontSize="medium" />
                                         </IconButton>
                                     </Tooltip>
-                                    <span className="text-sm text-gray-700 mt-1">Re-upload</span>
+                                    <span className="text-sm text-gray-700 mt-1 font-bold ">Re-upload</span>
                                 </div>
 
                                 {/* Remove */}
@@ -223,7 +221,7 @@ function ImageCropper() {
                                             <DeleteIcon fontSize="medium" />
                                         </IconButton>
                                     </Tooltip>
-                                    <span className="text-sm text-gray-700 mt-1">Remove</span>
+                                    <span className="text-sm text-gray-700 mt-1 font-bold">Remove</span>
                                 </div>
 
                                 {/* Download (only if image exists) */}
@@ -242,7 +240,7 @@ function ImageCropper() {
                                                 <DownloadIcon fontSize="medium" />
                                             </IconButton>
                                         </Tooltip>
-                                        <span className="text-sm text-gray-700 mt-1">Download</span>
+                                        <span className="text-sm text-gray-700 mt-1 font-bold">Download</span>
                                     </div>
                                 )}
                             </div>
@@ -259,36 +257,38 @@ function ImageCropper() {
                     )}
                 </div>
 
-                <div className="ratio-input w-full max-w-[920px] mx-auto px-4 mt-6 mb-4">
+                <div className="ratio-input w-full max-w-[930px] mx-auto px-4 mt-6 mb-4">
                     <div className="flex flex-col md:flex-row gap-6">
-
-                        {/* Common Ratios Section */}
                         <div className="w-full md:w-1/2 rounded-2xl p-6 shadow-lg border border-gray-300">
                             <h3 className="text-xl font-bold text-center text-gray-800 mb-4">Common Ratios</h3>
                             <div className="grid grid-cols-3 gap-3 sm:grid-cols-5 sm:gap-2">
                                 {[
                                     { label: "1:1", w: 500, h: 500 },
-                                    { label: "16:9", w: 1600, h: 900 },
                                     { label: "4:3", w: 800, h: 600 },
                                     { label: "3:2", w: 900, h: 600 },
+                                    { label: "16:9", w: 1600, h: 900 },
                                     { label: "9:16", w: 900, h: 1600 },
                                 ].map(({ label, w, h }) => (
+
+
                                     <button
                                         key={label}
                                         onClick={() => {
                                             setTargetWidth(w);
                                             setTargetHeight(h);
                                             setAspect(w / h);
+                                            setSelectedLabel(label);
                                         }}
-                                        className="py-3 px-2 rounded-xl text-gray-800 bg-white hover:bg-amber-200 transition-all duration-300 shadow-md hover:shadow-lg active:scale-[0.98] text-center border border-gray-300"
+                                        className={`py-3 px-2 rounded-xl text-gray-800 transition-all duration-300 shadow-md active:scale-[0.98] text-center border border-gray-300 ${selectedLabel === label ? "bg-amber-200" : "bg-white"
+                                            }`}
                                     >
                                         <span className="font-semibold text-lg">{label}</span>
                                     </button>
+
                                 ))}
                             </div>
                         </div>
 
-                        {/* Custom Size Section */}
                         <div className="w-full md:w-1/2 rounded-2xl p-6 shadow-lg border border-gray-300">
                             <h3 className="text-xl font-bold text-center text-gray-800 mb-4">Custom Size</h3>
                             <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
@@ -333,9 +333,9 @@ function ImageCropper() {
                     <div className="w-full px-4 sm:px-6 py-3 text-center text-gray-700 text-sm">
                         <div className="max-w-6xl mx-auto">
                             © {new Date().getFullYear()}{' '}
-                            <span className="text-[#FFD300] font-medium">PixFit</span>. All rights reserved. |   
-                            <Link to="/privacy-policy" className="text-gray-600 hover:text-[#FFD300] transition">
-                                 Privacy Policy
+                            <span className="text-yellow-500 font-medium">PixFit</span>. All rights reserved.  |
+                            <Link to="/privacy-policy" className="text-gray-600 hover:text-yellow-500 transition">
+                                {" "}Privacy Policy
                             </Link>
                         </div>
                     </div>
