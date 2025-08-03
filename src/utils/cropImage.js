@@ -1,4 +1,12 @@
-export const getCroppedImg = (imageSrc, pixelCrop, targetWidth = 300, targetHeight = 300) => {
+export const getCroppedImg = (
+  imageSrc,
+  pixelCrop,
+  targetWidth = 300,
+  targetHeight = 300,
+  format = 'image/png',    
+  quality = 1,             
+  triggerDownload = false 
+) => {
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.crossOrigin = "anonymous";
@@ -8,13 +16,13 @@ export const getCroppedImg = (imageSrc, pixelCrop, targetWidth = 300, targetHeig
       const canvas = document.createElement("canvas");
       canvas.width = targetWidth;
       canvas.height = targetHeight;
-
       const ctx = canvas.getContext("2d");
 
-      // Optional: better image smoothing
+      // Optional: High-quality rendering
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
 
+      // Draw the cropped section
       ctx.drawImage(
         image,
         pixelCrop.x,
@@ -27,18 +35,38 @@ export const getCroppedImg = (imageSrc, pixelCrop, targetWidth = 300, targetHeig
         targetHeight
       );
 
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          reject(new Error("Canvas is empty or toBlob failed"));
-          return;
-        }
-        const fileUrl = URL.createObjectURL(blob);
-        resolve(fileUrl);
-      }, "image/png");
+      // Convert to blob with format and quality
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error("Canvas is empty or toBlob failed."));
+            return;
+          }
+
+          const blobUrl = URL.createObjectURL(blob);
+
+          // Optional download
+          if (triggerDownload) {
+            const a = document.createElement("a");
+            a.href = blobUrl;
+            a.download = `cropped-${Date.now()}.${format.split('/')[1]}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
+
+          resolve(blobUrl);
+
+          // Optional: Cleanup after 1 minute
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+        },
+        format,
+        format === "image/jpeg" || format === "image/webp" ? quality : undefined
+      );
     };
 
-    image.onerror = (err) => {
-      reject(new Error("Image failed to load"));
+    image.onerror = () => {
+      reject(new Error("Image failed to load."));
     };
   });
 };
