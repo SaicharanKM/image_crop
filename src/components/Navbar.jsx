@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react"; // Keep only what's used
 
 const navLinks = [
   { name: "Home", path: "/" },
@@ -14,12 +14,10 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Close mobile menu when route changes
   useEffect(() => {
     setIsOpen(false);
   }, [location]);
 
-  // Add scroll effect (without changing height)
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
@@ -33,8 +31,8 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
         <div className="flex items-center justify-between h-full">
           {/* Logo */}
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="flex-shrink-0 text-2xl font-bold text-amber-500 hover:text-amber-400 transition-colors"
             aria-label="PixFit Home"
           >
@@ -83,7 +81,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu - Positioned absolutely below the navbar */}
+      {/* Mobile Menu */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -92,7 +90,7 @@ const Navbar = () => {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2 }}
             className="md:hidden absolute top-16 left-0 right-0 bg-gray-800/95 backdrop-blur-sm shadow-lg"
-            style={{ zIndex: 49 }} // Just below the navbar
+            style={{ zIndex: 49 }}
           >
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
               {navLinks.map((link) => {

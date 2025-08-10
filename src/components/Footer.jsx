@@ -20,8 +20,9 @@ function Footer() {
                             <h4 className="text-xl font-bold text-gray-900">PixFit</h4>
                         </div>
                         <p className="text-gray-600 text-sm leading-relaxed">
-                            Professional image cropping for creators, marketers, and photographers. Clean. Fast. Efficient.
+                            Smart tools for cropping, resizing, and compressing images — built for creators, brands, and professionals. Simple. Precise. Time-saving.
                         </p>
+
                     </div>
 
                     {/* Features */}
@@ -69,7 +70,7 @@ function Footer() {
                                     <FontAwesomeIcon icon={faLinkedinIn} size="lg" />
                                 </a>
                             </li>
-                          
+
                         </ul>
                     </div>
 
@@ -84,7 +85,7 @@ function Footer() {
                                     href="https://xpertxyz.in/"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="hover:text-amber-600 transition"
+                                    className="hover:text-amber-600 transition font-bold"
                                 >
                                     XpertXYZ Website
                                 </a>
@@ -96,7 +97,7 @@ function Footer() {
                                     href="https://play.google.com/store/apps/dev?id=5590657123168889231"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="hover:text-amber-600 transition"
+                                    className="hover:text-amber-600 transition font-bold"
                                 >
                                     Our Apps on Play Store
                                 </a>

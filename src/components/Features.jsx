@@ -10,7 +10,9 @@ import {
   FaLock
 } from "react-icons/fa";
 
+
 const Features = () => {
+  
   const features = [
     {
       icon: <FaCropAlt className="text-3xl text-amber-500" />,

@@ -6,25 +6,16 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DownloadIcon from '@mui/icons-material/Download';
 import { Link } from "react-router-dom";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-    faInstagram,
-    faXTwitter,
-    faLinkedinIn,
-    faWhatsapp
-} from '@fortawesome/free-brands-svg-icons';
 
-
-
-// Define resolution options
 const resolutions = [
-    { label: "16:9", w: 1600, h: 900 },   // video, YouTube, screens
-    { label: "4:3", w: 800, h: 600 },     // Common in older TVs, webcams, some photography
-    { label: "1:1", w: 500, h: 500 },     // Instagram posts, profile pictures
-    { label: "3:2", w: 900, h: 600 },     // DSLR cameras, photography
-    { label: "2:3", w: 800, h: 1200 },    // Portrait photography, prints
-    { label: "4:5", w: 1080, h: 1350 },   // Instagram portrait format
-    { label: "9:16", w: 900, h: 1600 }    // TikTok, Instagram Reels, vertical video
+    { label: "16:9", w: 1600, h: 900 },
+    { label: "4:3", w: 800, h: 600 },
+    { label: "1:1", w: 500, h: 500 },
+    { label: "3:2", w: 900, h: 600 },
+    { label: "2:3", w: 800, h: 1200 },
+    { label: "4:5", w: 1080, h: 1350 },
+    { label: "9:16", w: 900, h: 1600 },
+    { label: "21:9", w: 2520, h: 1080 }
 ];
 
 function ImageCropper() {
@@ -39,7 +30,7 @@ function ImageCropper() {
     const [selectedLabel, setSelectedLabel] = useState("Original");
     const [format, setFormat] = useState('image/jpeg');
     const [quality, setQuality] = useState(90);
-
+    const [originalFileName, setOriginalFileName] = useState('');
     const lastBlobUrlRef = useRef(null);
 
     useEffect(() => {
@@ -292,7 +283,7 @@ function ImageCropper() {
                 <div className="ratio-input w-full max-w-6xl mx-auto px-4 mt-8 " >
                     <div className="flex flex-col lg:flex-row gap-10">
                         {/* Resolution Card */}
-                        <div className="w-full lg:w-1/2 rounded-xl p-8 shadow-lg border border-gray-100 bg-white transition-all duration-300 hover:shadow-xl">
+                        <div className="w-full lg:w-1/2 ">
                             <div className="text-center mb-8">
                                 <h3 className="text-2xl font-semibold text-gray-800 mb-2">Professional Aspect Ratios</h3>
                                 <p className="text-gray-500">Optimized for all platforms and use cases</p>
@@ -342,8 +333,6 @@ function ImageCropper() {
                                         </div>
                                     </div>
 
-                                    {/* <div className="text-gray-400 text-xl  sm:mt-0">×</div> */}
-
                                     <div className="w-full">
                                         <label className="block text-sm text-gray-600 mb-1">Height</label>
                                         <div className="relative">
@@ -366,10 +355,10 @@ function ImageCropper() {
                             </div>
                         </div>
 
-                        <div className="w-full lg:w-1/2 rounded-xl p-8 shadow-lg border border-gray-100 bg-white transition-all duration-300 hover:shadow-xl">
+                        <div className="w-full lg:w-1/2 ">
                             <div className="text-center mb-8">
-                                <h2 className="text-3xl font-semibold text-gray-800 mb-2">Image Compressor</h2>
-                                <p className="text-gray-500 text-lg">Best web app to compress image files online for free.</p>
+                                <h2 className="text-2xl font-semibold text-gray-800 mb-2">Image Compressor</h2>
+                                <p className="text-gray-500 ">Best web app to compress image files online for free.</p>
                             </div>
                             <div className="w-full grid grid-cols-1 gap-6 mb-6">
                                 <div>
@@ -382,13 +371,16 @@ function ImageCropper() {
                                             onChange={(e) => setFormat(e.target.value)}
                                             className="w-full pl-4 pr-10 py-3 rounded-lg border border-gray-200 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-amber-400 focus:border-amber-400 appearance-none"
                                         >
-                                            <option value="image/jpeg">JPG (Best for photos)</option>
-                                            <option value="image/png">PNG (Transparency support)</option>
+                                            <option value="image/jpeg">JPG – Best for photos</option>
+                                            <option value="image/png">PNG – Supports transparency (no quality setting)</option>
+                                            <option value="image/webp">WEBP – Modern format, small size</option>
+                                            <option value="image/avif">AVIF – Best compression & quality</option>
+                                            <option value="image/bmp">BMP – Uncompressed, large size</option>
+                                            <option value="image/tiff">TIFF – High-quality, used in publishing</option>
                                         </select>
                                         <span className="absolute right-3 top-3.5 text-gray-400 text-xs">▼</span>
                                     </div>
                                 </div>
-
                                 <div>
                                     <label className="text-gray-600 text-sm font-medium block mb-2 flex items-center justify-center">
                                         Quality: <span className="ml-2 font-bold text-amber-600">{quality}%</span>
@@ -396,16 +388,13 @@ function ImageCropper() {
                                     <div className="flex items-center gap-4 w-full">
                                         {/* Track container with progress indicator */}
                                         <div className="flex-1 relative h-6 flex items-center">
-                                            {/* Full track background */}
                                             <div className="absolute w-full h-1.5 bg-gray-100 rounded-full"></div>
 
-                                            {/* Colored progress portion */}
                                             <div
                                                 className="absolute h-1.5 bg-gradient-to-r from-amber-400 to-amber-500 rounded-full"
                                                 style={{ width: `${quality}%` }}
                                             ></div>
 
-                                            {/* Interactive slider */}
                                             <input
                                                 type="range"
                                                 min={10}
@@ -414,17 +403,18 @@ function ImageCropper() {
                                                 value={quality}
                                                 disabled={format === "image/png"}
                                                 onChange={(e) => setQuality(parseInt(e.target.value))}
-                                                className="absolute w-full h-6 opacity-0 cursor-pointer disabled:cursor-not-allowed z-10"
+                                                className="absolute w-full h-6 opacity-0 cursor-pointer disabled:cursor-not-allowed z-20"
                                             />
 
-                                            {/* Custom thumb */}
+                                            {/* Custom thumb - pointer-events-none to allow interaction with range input */}
                                             <div
-                                                className="absolute h-4 w-4 bg-white border-2 border-amber-500 rounded-full shadow-md transform -translate-x-1/2 z-20 transition-transform hover:scale-125"
+                                                className="absolute h-4 w-4 bg-white border-2 border-amber-500 rounded-full shadow-md transform -translate-x-1/2 z-10 pointer-events-none transition-transform"
                                                 style={{ left: `${quality}%` }}
                                             >
                                                 <div className="absolute inset-0 m-auto h-2 w-2 bg-amber-500 rounded-full"></div>
                                             </div>
                                         </div>
+
 
                                         {/* Value display */}
                                         <div className="flex items-center justify-center bg-white border border-amber-200 text-amber-700 font-medium text-sm w-16 h-8 rounded-lg shadow-inner">
