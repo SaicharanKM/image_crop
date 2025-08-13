@@ -5,7 +5,7 @@ import { faInstagram, faLinkedinIn } from "@fortawesome/free-brands-svg-icons";
 
 function Footer() {
     return (
-        <footer className="w-full bg-[#0a0a0a] text-[#f5f0eb]">
+        <footer className="footer w-full bg-[#0a0a0a] text-[#f5f0eb]">
             <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 py-12">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-10">
 
@@ -15,7 +15,7 @@ function Footer() {
                             <img
                                 src="/android-chrome-192x192.png"
                                 alt="PixFit Pro Logo"
-                                className="w-10 h-10 mr-3 transition duration-300 ease-in-out hover:shadow-[0_0_10px_3px_rgba(255,255,255,0.8)] "
+                                className="w-10 h-10 mr-3 transition duration-300 ease-in-out hover:shadow-[0_0_10px_3px_rgba(255,255,255,0.8)]"
                             />
                             <h4 className="text-2xl font-bold text-[#f5f0eb]">PixFit</h4>
                         </div>
@@ -76,7 +76,6 @@ function Footer() {
                             </li>
                         </ul>
                     </div>
-                    
 
                     {/* More from Us */}
                     <div>
@@ -111,7 +110,7 @@ function Footer() {
             </div>
 
             {/* Bottom bar */}
-            <div className="border-t  py-4 text-center text-sm text-[#b8b0a9]">
+            <div className="border-t py-4 text-center text-sm text-[#b8b0a9]">
                 <p>© {new Date().getFullYear()} PixFit Pro. All rights reserved.</p>
             </div>
         </footer>

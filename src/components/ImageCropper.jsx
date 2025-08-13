@@ -130,16 +130,19 @@ function ImageCropper() {
             </div> */}
             <div className="w-full max-w-5xl flex flex-col items-center p-4">
                 <div
-                    className={`upload-section w-full mx-auto mt-4 p-4 sm:p-6
+                    className={`
+    upload-section
+    w-full max-w-4xl mx-auto mt-6 p-6 sm:p-8
     min-h-[520px] sm:min-h-[560px]
-    border-3 ${isDragging
-                            ? "border-amber-500 bg-amber-50 shadow-[0_0_15px_rgba(245,158,11,0.5)]"
+    border-4 rounded-2xl border-dashed
+    flex flex-col items-center justify-center text-center
+    transition-all duration-300 ease-in-out transform
+    shadow-lg
+    ${isDragging
+                            ? "border-amber-500 bg-amber-50 shadow-[0_0_20px_rgba(245,158,11,0.7)] scale-[1.02]"
                             : "border-gray-300 bg-gradient-to-br from-gray-50 to-white"
                         }
-    border-dashed rounded-2xl shadow-lg flex flex-col items-center justify-center text-center
-    transition-all duration-300 ease-in-out transform ${isDragging ? "scale-[1.01]" : ""}`}
-
-
+  `}
                     onDragOver={(e) => {
                         e.preventDefault();
                         setIsDragging(true);
@@ -156,7 +159,7 @@ function ImageCropper() {
                 >
                     {!image ? (
                         <>
-                            <div className="w-full flex flex-col items-center text-gray-800 justify-center">
+                            <div className="flex flex-col items-center text-gray-800">
                                 <div className="relative mb-6">
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
@@ -173,14 +176,16 @@ function ImageCropper() {
                                     </div>
                                 </div>
 
-                                <p className="text-xl sm:text-2xl font-bold mb-2 text-gray-900 text-center">Transform Your Images in Seconds</p>
-                                <p className="text-base sm:text-lg text-gray-700 mb-4 text-center px-4">
+                                <p className="text-2xl font-bold mb-2 text-gray-900">
+                                    Transform Your Images in Seconds
+                                </p>
+                                <p className="text-lg text-gray-700 mb-6 px-4 max-w-xl">
                                     The Ultimate Tool for Resizing and Cropping at the Same Time
                                 </p>
 
                                 <label
                                     htmlFor="imageUpload"
-                                    className="mt-4 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-lg cursor-pointer hover:from-amber-600 hover:to-amber-700 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center"
+                                    className="mt-4 px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-lg cursor-pointer hover:from-amber-600 hover:to-amber-700 transition shadow-lg hover:shadow-xl flex items-center justify-center"
                                 >
                                     <CloudUploadIcon className="mr-2" />
                                     Upload Your Image
@@ -200,7 +205,7 @@ function ImageCropper() {
                         </>
                     ) : (
                         <>
-                            <div className="crop-container mt-4 w-full h-[100vw] max-h-[440px] sm:h-[500px] relative rounded-md overflow-hidden">
+                            <div className="crop-container mt-4 w-full h-[max(100vw,440px)] sm:h-[500px] relative rounded-md overflow-hidden">
                                 <Cropper
                                     image={image}
                                     crop={crop}
@@ -212,15 +217,15 @@ function ImageCropper() {
                                 />
                             </div>
 
-                            <div className="flex flex-wrap items-center justify-center gap-6 mt-6 w-full">
+                            <div className="flex flex-wrap items-center justify-center gap-6 mt-6 w-full max-w-xl mx-auto">
                                 {/* Re-upload */}
                                 <div className="flex flex-col items-center">
                                     <Tooltip title="Re-upload Image">
                                         <IconButton
                                             onClick={() => document.getElementById("reuploadInput").click()}
                                             sx={{
-                                                color: '#0d3288ff',
-                                                '&:hover': { color: '#0c296cff' },
+                                                color: "#0d3288ff",
+                                                "&:hover": { color: "#0c296cff" },
                                             }}
                                         >
                                             <CloudUploadIcon fontSize="medium" />
@@ -238,8 +243,8 @@ function ImageCropper() {
                                                 setCroppedAreaPixels(null);
                                             }}
                                             sx={{
-                                                color: '#dc2626',
-                                                '&:hover': { color: '#b91c1c' },
+                                                color: "#dc2626",
+                                                "&:hover": { color: "#b91c1c" },
                                             }}
                                         >
                                             <DeleteIcon fontSize="medium" />
@@ -255,8 +260,8 @@ function ImageCropper() {
                                             <IconButton
                                                 onClick={downloadImage}
                                                 sx={{
-                                                    color: '#f59e0b',
-                                                    '&:hover': { filter: 'brightness(1.1)' },
+                                                    color: "#f59e0b",
+                                                    "&:hover": { filter: "brightness(1.1)" },
                                                 }}
                                             >
                                                 <DownloadIcon fontSize="medium" />
@@ -280,6 +285,7 @@ function ImageCropper() {
 
 
 
+
                 <div className="ratio-input w-full max-w-6xl mx-auto px-4 mt-8 " >
                     <div className="flex flex-col lg:flex-row gap-10">
                         {/* Resolution Card */}
@@ -289,19 +295,21 @@ function ImageCropper() {
                                 <p className="text-gray-500">Optimized for all platforms and use cases</p>
                             </div>
 
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-8">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-12">
                                 {resolutions.map(({ label, w, h }) => (
                                     <button
                                         key={label}
                                         onClick={() => handleResolutionChange(label, w, h)}
-                                        className={`py-3 px-2 rounded-lg transition-all duration-200 text-center border
-                    ${selectedLabel === label
-                                                ? "bg-amber-50 border-amber-300 shadow-sm ring-1 ring-amber-200 font-medium"
-                                                : "bg-gray-50 border-gray-200 hover:bg-amber-50 hover:border-amber-200"}
-                `}
+                                        className={`py-3 px-2 min-w-[80px] rounded-xl transition-all duration-200 text-center border font-semibold focus:outline-none
+                ${selectedLabel === label
+                                                ? "bg-amber-50 border-amber-400 shadow-md ring-2 ring-amber-300 text-amber-700"
+                                                : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-amber-100 hover:border-amber-200"}
+              `}
                                     >
-                                        <span className="block text-gray-800">{label}</span>
-                                        <span className="block text-xs text-gray-500 mt-1">{label !== 'Custom' ? `${w}×${h}` : ''}</span>
+                                        <span className="block text-base">{label}</span>
+                                        <span className="block text-xs text-gray-500 mt-1">
+                                            {label !== 'Custom' ? `${w}×${h}` : ''}
+                                        </span>
                                     </button>
                                 ))}
                             </div>

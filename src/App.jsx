@@ -9,6 +9,7 @@ import ScrollToTop from './components/ScrollToTop'
 function App() {
   return (
     <>
+      {/* Scroll to top on every route change */}
       <ScrollToTop />
       <Navbar />
       <Routes>
