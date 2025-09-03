@@ -8,8 +8,6 @@ function Footer() {
         <footer className="footer w-full bg-[#0a0a0a] text-[#f5f0eb]">
             <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 py-12">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-10">
-
-                    {/* Logo & About */}
                     <div>
                         <div className="flex items-center mb-4">
                             <img

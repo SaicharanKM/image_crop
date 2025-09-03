@@ -6,6 +6,8 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DownloadIcon from '@mui/icons-material/Download';
 import { Link } from "react-router-dom";
+import RotateLeftIcon from '@mui/icons-material/RotateLeft';
+import RotateRightIcon from '@mui/icons-material/RotateRight';
 
 const resolutions = [
     { label: "16:9", w: 1600, h: 900 },
@@ -85,7 +87,7 @@ function ImageCropper() {
         } else {
             setAspect(undefined);
         }
-        setSelectedLabel("Custom"); // Ensure Custom is selected
+        setSelectedLabel("Custom");
     };
 
     const downloadImage = async () => {
@@ -124,10 +126,9 @@ function ImageCropper() {
         }
     };
 
+    const [rotation, setRotation] = useState(0);
     return (
         <div className="min-h-screen w-full bg-gradient-to-b from-gray-50 to-gray-100 text-gray-800 flex flex-col items-center pt-16">
-            {/* <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-3 gap-4 px-4 py-6">
-            </div> */}
             <div className="w-full max-w-5xl flex flex-col items-center p-4">
                 <div
                     className={`
@@ -218,7 +219,6 @@ function ImageCropper() {
                             </div>
 
                             <div className="flex flex-wrap items-center justify-center gap-6 mt-6 w-full max-w-xl mx-auto">
-                                {/* Re-upload */}
                                 <div className="flex flex-col items-center">
                                     <Tooltip title="Re-upload Image">
                                         <IconButton
@@ -255,6 +255,7 @@ function ImageCropper() {
 
                                 {/* Download */}
                                 {image && (
+                                    <>
                                     <div className="flex flex-col items-center">
                                         <Tooltip title="Download Image">
                                             <IconButton
@@ -268,7 +269,8 @@ function ImageCropper() {
                                             </IconButton>
                                         </Tooltip>
                                         <span className="text-sm text-gray-700 mt-1 font-bold">Download</span>
-                                    </div>
+                                    </div>    
+                                </>
                                 )}
                             </div>
 
@@ -282,9 +284,6 @@ function ImageCropper() {
                         </>
                     )}
                 </div>
-
-
-
 
                 <div className="ratio-input w-full max-w-6xl mx-auto px-4 mt-8 " >
                     <div className="flex flex-col lg:flex-row gap-10">
@@ -329,7 +328,6 @@ function ImageCropper() {
                                                 value={targetWidth}
                                                 onChange={(e) => {
                                                     const value = e.target.value;
-                                                    // Allow empty value or valid numbers
                                                     if (value === '' || !isNaN(value)) {
                                                         handleCustomDimensionChange(value === '' ? '' : Number(value), targetHeight);
                                                     }
@@ -363,6 +361,8 @@ function ImageCropper() {
                             </div>
                         </div>
 
+                
+                        {/* Image Compressor */}
                         <div className="w-full lg:w-1/2 ">
                             <div className="text-center mb-8">
                                 <h2 className="text-2xl font-semibold text-gray-800 mb-2">Image Compressor</h2>
@@ -394,15 +394,12 @@ function ImageCropper() {
                                         Quality: <span className="ml-2 font-bold text-amber-600">{quality}%</span>
                                     </label>
                                     <div className="flex items-center gap-4 w-full">
-                                        {/* Track container with progress indicator */}
                                         <div className="flex-1 relative h-6 flex items-center">
                                             <div className="absolute w-full h-1.5 bg-gray-100 rounded-full"></div>
-
                                             <div
                                                 className="absolute h-1.5 bg-gradient-to-r from-amber-400 to-amber-500 rounded-full"
                                                 style={{ width: `${quality}%` }}
                                             ></div>
-
                                             <input
                                                 type="range"
                                                 min={10}
@@ -413,8 +410,6 @@ function ImageCropper() {
                                                 onChange={(e) => setQuality(parseInt(e.target.value))}
                                                 className="absolute w-full h-6 opacity-0 cursor-pointer disabled:cursor-not-allowed z-20"
                                             />
-
-                                            {/* Custom thumb - pointer-events-none to allow interaction with range input */}
                                             <div
                                                 className="absolute h-4 w-4 bg-white border-2 border-amber-500 rounded-full shadow-md transform -translate-x-1/2 z-10 pointer-events-none transition-transform"
                                                 style={{ left: `${quality}%` }}

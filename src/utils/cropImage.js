@@ -3,9 +3,9 @@ export const getCroppedImg = (
   pixelCrop,
   targetWidth = 300,
   targetHeight = 300,
-  format = 'image/png',    
-  quality = 1,             
-  triggerDownload = false 
+  format = 'image/png',
+  quality = 1,
+  triggerDownload = false
 ) => {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -21,6 +21,7 @@ export const getCroppedImg = (
       // Optional: High-quality rendering
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
+  
 
       // Draw the cropped section
       ctx.drawImage(

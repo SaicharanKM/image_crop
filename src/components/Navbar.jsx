@@ -5,6 +5,7 @@ import { Menu, X } from "lucide-react";
 
 const navLinks = [
   { name: "Home", path: "/" },
+  {name:"HD Image Booster",path:"/PhotoEnhancer"},
   { name: "Features", path: "/features" },
   { name: "Privacy Policy", path: "/privacy-policy" },
 ];
@@ -116,7 +117,7 @@ export default function Navbar() {
               </button>
 
               {/* Links */}
-              <div className="w-full flex flex-col items-center mt-6">
+              <div className="w-full flex flex-col  mt-15">
                 {navLinks.map((link, index) => {
                   const isActive = location.pathname === link.path;
                   return (

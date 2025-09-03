@@ -5,6 +5,7 @@ import Features from './components/Features'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import ScrollToTop from './components/ScrollToTop'
+import PhotoEnhancer from './components/PhotoEnhancer'
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/" element={<ImageCropper />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/features" element={<Features />} />
+        <Route path="/PhotoEnhancer" element={<PhotoEnhancer />}/>
       </Routes>
       <Footer />
     </>
@@ -23,3 +25,20 @@ function App() {
 }
 
 export default App
+
+
+// App.jsx
+
+// App.jsx
+// import React from "react";
+// import PhotoEnhancer from "./components/PhotoEnhancer";
+
+// function App() {
+//   return (
+//     <div>
+//       <PhotoEnhancer />
+//     </div>
+//   );
+// }
+
+// export default App;
