@@ -128,7 +128,7 @@ function ImageCropper() {
 
     const [rotation, setRotation] = useState(0);
     return (
-        <div className="min-h-screen w-full bg-gradient-to-b from-gray-50 to-gray-100 text-gray-800 flex flex-col items-center pt-16">
+        <div className="min-h-screen w-full bg-gradient-to-b from-gray-50 to-gray-100 text-gray-800 flex flex-col items-center pt-24">
             <div className="w-full max-w-5xl flex flex-col items-center p-4">
                 <div
                     className={`
@@ -256,21 +256,21 @@ function ImageCropper() {
                                 {/* Download */}
                                 {image && (
                                     <>
-                                    <div className="flex flex-col items-center">
-                                        <Tooltip title="Download Image">
-                                            <IconButton
-                                                onClick={downloadImage}
-                                                sx={{
-                                                    color: "#f59e0b",
-                                                    "&:hover": { filter: "brightness(1.1)" },
-                                                }}
-                                            >
-                                                <DownloadIcon fontSize="medium" />
-                                            </IconButton>
-                                        </Tooltip>
-                                        <span className="text-sm text-gray-700 mt-1 font-bold">Download</span>
-                                    </div>    
-                                </>
+                                        <div className="flex flex-col items-center">
+                                            <Tooltip title="Download Image">
+                                                <IconButton
+                                                    onClick={downloadImage}
+                                                    sx={{
+                                                        color: "#f59e0b",
+                                                        "&:hover": { filter: "brightness(1.1)" },
+                                                    }}
+                                                >
+                                                    <DownloadIcon fontSize="medium" />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <span className="text-sm text-gray-700 mt-1 font-bold">Download</span>
+                                        </div>
+                                    </>
                                 )}
                             </div>
 
@@ -361,7 +361,7 @@ function ImageCropper() {
                             </div>
                         </div>
 
-                
+
                         {/* Image Compressor */}
                         <div className="w-full lg:w-1/2 ">
                             <div className="text-center mb-8">

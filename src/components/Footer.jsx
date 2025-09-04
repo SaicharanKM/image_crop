@@ -30,6 +30,11 @@ function Footer() {
                             <li>Custom dimensions</li>
                             <li>High-quality output</li>
                             <li>Browser-based processing</li>
+                            <button className="text-amber-500 hover:text-amber-600 transition"> 
+                                <Link to="/features">
+                                    view more
+                                </Link>
+                            </button>
                         </ul>
                     </div>
 
