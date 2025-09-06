@@ -5,212 +5,240 @@ import { IconButton, Tooltip } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DownloadIcon from '@mui/icons-material/Download';
-import { Link } from "react-router-dom";
+import AspectRatioIcon from '@mui/icons-material/AspectRatio';
+import SettingsIcon from '@mui/icons-material/Settings';
 import RotateLeftIcon from '@mui/icons-material/RotateLeft';
 import RotateRightIcon from '@mui/icons-material/RotateRight';
+import RestoreIcon from '@mui/icons-material/Restore';
+
+// Color palette
+const colors = {
+  space_cadet: '#22223b',
+  ultra_violet: '#4a4e69',
+  rose_quartz: '#9a8c98',
+  pale_dogwood: '#c9ada7',
+  isabelline: '#f2e9e4'
+};
 
 const resolutions = [
-    { label: "16:9", w: 1600, h: 900 },
-    { label: "4:3", w: 800, h: 600 },
-    { label: "1:1", w: 500, h: 500 },
-    { label: "3:2", w: 900, h: 600 },
-    { label: "2:3", w: 800, h: 1200 },
-    { label: "4:5", w: 1080, h: 1350 },
-    { label: "9:16", w: 900, h: 1600 },
-    { label: "21:9", w: 2520, h: 1080 }
+  { label: "16:9", w: 16, h: 9 },
+  { label: "4:3", w: 4, h: 3 },
+  { label: "1:1", w: 1, h: 1 },
+  { label: "3:2", w: 3, h: 2 },
+  { label: "2:3", w: 2, h: 3 },
+  { label: "4:5", w: 4, h: 5 },
+  { label: "9:16", w: 9, h: 16 },
+  { label: "21:9", w: 21, h: 9 }
 ];
 
+// helper to create Pixfit filename
+const getPixfitFileName = (originalName, format) => {
+  if (!originalName) {
+    return `Pixfit.${format.split("/")[1] || "jpg"}`;
+  }
+  const dotIndex = originalName.lastIndexOf(".");
+  if (dotIndex === -1) {
+    return `${originalName}Pixfit.${format.split("/")[1] || "jpg"}`;
+  }
+  const name = originalName.substring(0, dotIndex);
+  const ext = originalName.substring(dotIndex + 1);
+  return `${name}Pixfit.${ext}`;
+};
+
 function ImageCropper() {
-    const [image, setImage] = useState(null);
-    const [crop, setCrop] = useState({ x: 0, y: 0 });
-    const [zoom, setZoom] = useState(1);
-    const [aspect, setAspect] = useState(undefined);
-    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-    const [targetWidth, setTargetWidth] = useState(0);
-    const [targetHeight, setTargetHeight] = useState(0);
-    const [isDragging, setIsDragging] = useState(false);
-    const [selectedLabel, setSelectedLabel] = useState("Original");
-    const [format, setFormat] = useState('image/jpeg');
-    const [quality, setQuality] = useState(90);
-    const [originalFileName, setOriginalFileName] = useState('');
-    const lastBlobUrlRef = useRef(null);
+  const [image, setImage] = useState(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [aspect, setAspect] = useState(undefined);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [targetWidth, setTargetWidth] = useState("");
+  const [targetHeight, setTargetHeight] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const [selectedLabel, setSelectedLabel] = useState("Original");
+  const [format, setFormat] = useState('image/jpeg');
+  const [quality, setQuality] = useState(90);
+  const [activeTab, setActiveTab] = useState('crop');
+  const lastBlobUrlRef = useRef(null);
+  const fileNameRef = useRef(null); // <-- store original file name
 
-    useEffect(() => {
-        return () => {
-            if (lastBlobUrlRef.current) {
-                URL.revokeObjectURL(lastBlobUrlRef.current);
-            }
-        };
-    }, []);
-
-    const onCropComplete = useCallback((_, croppedPixels) => {
-        setCroppedAreaPixels(croppedPixels);
-    }, []);
-
-    const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            // Cleanup previous blob URL
-            if (lastBlobUrlRef.current) {
-                URL.revokeObjectURL(lastBlobUrlRef.current);
-                lastBlobUrlRef.current = null;
-            }
-
-            // Reset states for new image
-            setCrop({ x: 0, y: 0 });
-            setZoom(1);
-            setImage(URL.createObjectURL(file));
-        }
+  useEffect(() => {
+    return () => {
+      if (lastBlobUrlRef.current) {
+        URL.revokeObjectURL(lastBlobUrlRef.current);
+      }
     };
+  }, []);
 
-    const handleResolutionChange = (label, w, h) => {
-        setSelectedLabel(label);
+  const onCropComplete = useCallback((_, croppedPixels) => {
+    setCroppedAreaPixels(croppedPixels);
+  }, []);
 
-        if (label === "Original") {
-            setAspect(undefined);
-            setTargetWidth(0);
-            setTargetHeight(0);
-        } else if (label === "Custom") {
-            setAspect(undefined);
-        } else {
-            setTargetWidth(w);
-            setTargetHeight(h);
-            setAspect(w / h);
-        }
-    };
-    const handleCustomDimensionChange = (width, height) => {
-        setTargetWidth(width);
-        setTargetHeight(height);
-        // Only update aspect if both values are valid numbers
-        if (width && height) {
-            setAspect(width / height);
-        } else {
-            setAspect(undefined);
-        }
-        setSelectedLabel("Custom");
-    };
+  const handleImageUpload = (e) => {
+    const files =
+      e.target.files ||
+      (e.dataTransfer && e.dataTransfer.files);
+    const file = files && files[0];
+    if (file) {
+      if (lastBlobUrlRef.current) {
+        URL.revokeObjectURL(lastBlobUrlRef.current);
+        lastBlobUrlRef.current = null;
+      }
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setRotation(0);
+      setImage(URL.createObjectURL(file));
+      fileNameRef.current = file.name; // save original file name
+    }
+  };
 
-    const downloadImage = async () => {
-        if (!image || !croppedAreaPixels) {
-            alert("Please upload an image and adjust the crop area first");
-            return;
-        }
+  const handleResolutionChange = (label, w, h) => {
+    setSelectedLabel(label);
+    if (label === "Original") {
+      setAspect(undefined);
+      setTargetWidth(0);
+      setTargetHeight(0);
+    } else if (label === "Custom") {
+      setAspect(undefined);
+    } else {
+      setTargetWidth(w);
+      setTargetHeight(h);
+      setAspect(w / h);
+    }
+  };
 
-        try {
+  const handleCustomDimensionChange = (width, height) => {
+    setTargetWidth(width);
+    setTargetHeight(height);
+    if (width && height) {
+      setAspect(width / height);
+    } else {
+      setAspect(undefined);
+    }
+    setSelectedLabel("Custom");
+  };
 
-            const width = targetWidth === 0 ? croppedAreaPixels.width : targetWidth;
-            const height = targetHeight === 0 ? croppedAreaPixels.height : targetHeight;
+  const downloadImage = async () => {
+    if (!image || !croppedAreaPixels) {
+      alert("Please upload an image and adjust the crop area first");
+      return;
+    }
+    try {
+      const width = selectedLabel === "Custom" ? parseInt(targetWidth) : 0;
+      const height = selectedLabel === "Custom" ? parseInt(targetHeight) : 0;
 
-            const croppedImgUrl = await getCroppedImg(
-                image,
-                croppedAreaPixels,
-                parseInt(width),
-                parseInt(height),
-                format,
-                quality / 100
-            );
+      const croppedImgUrl = await getCroppedImg(
+        image,
+        croppedAreaPixels,
+        width,
+        height,
+        format,
+        quality / 100,
+        rotation
+      );
 
-            if (lastBlobUrlRef.current) {
-                URL.revokeObjectURL(lastBlobUrlRef.current);
-            }
-            lastBlobUrlRef.current = croppedImgUrl;
-            const extension = format.split('/')[1];
-            const link = document.createElement("a");
-            link.download = `cropped-image.${extension}`;
-            link.href = croppedImgUrl;
-            link.click();
+      if (lastBlobUrlRef.current) {
+        URL.revokeObjectURL(lastBlobUrlRef.current);
+      }
+      lastBlobUrlRef.current = croppedImgUrl;
 
-        } catch (e) {
-            console.error("Download failed:", e);
-            alert("Unsupported file format. Please try with JPEG or PNG.");
-        }
-    };
+      const fileName = getPixfitFileName(fileNameRef.current, format);
 
-    const [rotation, setRotation] = useState(0);
+      const link = document.createElement("a");
+      link.download = fileName;
+      link.href = croppedImgUrl;
+      link.click();
+    } catch (e) {
+      console.error("Download failed:", e);
+      alert("Something went wrong while exporting.");
+    }
+  };
+
+  const handleRotateLeft = () => {
+    setRotation(prev => (prev - 90) % 360);
+  };
+
+  const handleRotateRight = () => {
+    setRotation(prev => (prev + 90) % 360);
+  };
+
+  const handleReset = () => {
+    setZoom(1);
+    setRotation(0);
+    setCrop({ x: 0, y: 0 });
+  };
+
     return (
-        <div className="min-h-screen w-full bg-gradient-to-b from-gray-50 to-gray-100 text-gray-800 flex flex-col items-center pt-24">
-            <div className="w-full max-w-5xl flex flex-col items-center p-4">
+        <div className={`min-h-screen w-full grid grid-cols-1 lg:grid-cols-3 overflow-hidden mt-[60px]`} style={{ 
+            background: `linear-gradient(to bottom right, ${colors.pale_dogwood}, ${colors.isabelline}, ${colors.rose_quartz})`
+        }}>
+
+            {/* Left: Canvas/Preview - 2 columns on large screens */}
+            <div className="lg:col-span-2 flex flex-col justify-center items-center h-full bg-white shadow-xl p-4 md:p-8">
                 <div
-                    className={`
-    upload-section
-    w-full max-w-4xl mx-auto mt-6 p-6 sm:p-8
-    min-h-[520px] sm:min-h-[560px]
-    border-4 rounded-2xl border-dashed
-    flex flex-col items-center justify-center text-center
-    transition-all duration-300 ease-in-out transform
-    shadow-lg
-    ${isDragging
-                            ? "border-amber-500 bg-amber-50 shadow-[0_0_20px_rgba(245,158,11,0.7)] scale-[1.02]"
-                            : "border-gray-300 bg-gradient-to-br from-gray-50 to-white"
-                        }
-  `}
-                    onDragOver={(e) => {
-                        e.preventDefault();
-                        setIsDragging(true);
-                    }}
+                    className={`upload-section w-full max-w-4xl mx-auto p-4 min-h-[400px] md:min-h-[70vh] border-4 rounded-2xl border-dashed flex flex-col items-center justify-center text-center transition-all duration-300 ease-in-out transform shadow-lg ${isDragging
+                        ? `border-[${colors.ultra_violet}] bg-[${colors.ultra_violet}20] shadow-[0_0_20px_${colors.ultra_violet}50] scale-[1.02]`
+                        : `border-[${colors.rose_quartz}] bg-gradient-to-br from-[${colors.isabelline}] to-white`
+                        }`}
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                     onDragLeave={() => setIsDragging(false)}
                     onDrop={(e) => {
                         e.preventDefault();
                         setIsDragging(false);
-                        const file = e.dataTransfer.files[0];
-                        if (file) {
-                            handleImageUpload({ target: { files: [file] } });
-                        }
+                        handleImageUpload(e);
                     }}
                 >
                     {!image ? (
-                        <>
-                            <div className="flex flex-col items-center text-gray-800">
-                                <div className="relative mb-6">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-20 w-20 mb-4 text-amber-500 mx-auto"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
-                                    >
-                                        <path d="M12 3L7 8h3v4h4V8h3l-5-5zM5 18h14v2H5z" />
-                                    </svg>
-                                    <div className="absolute -top-2 -right-2">
-                                        <div className="bg-amber-500 text-white rounded-full px-2 py-1 text-xs font-bold animate-pulse">
-                                            FREE
-                                        </div>
+                        <div className="flex flex-col items-center p-6" style={{ color: colors.space_cadet }}>
+                            <div className="relative mb-6">
+                                <div className="w-24 h-24 rounded-full flex items-center justify-center mb-4 mx-auto" style={{ backgroundColor: `${colors.rose_quartz}20` }}>
+                                    <CloudUploadIcon className="text-4xl" style={{ color: colors.ultra_violet }} />
+                                </div>
+                                <div className="absolute -top-2 -right-2">
+                                    <div className="text-white rounded-full px-3 py-1 text-xs font-bold animate-pulse" style={{ backgroundColor: colors.ultra_violet }}>
+                                        FREE
                                     </div>
                                 </div>
-
-                                <p className="text-2xl font-bold mb-2 text-gray-900">
-                                    Transform Your Images in Seconds
-                                </p>
-                                <p className="text-lg text-gray-700 mb-6 px-4 max-w-xl">
-                                    The Ultimate Tool for Resizing and Cropping at the Same Time
-                                </p>
-
-                                <label
-                                    htmlFor="imageUpload"
-                                    className="mt-4 px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-lg cursor-pointer hover:from-amber-600 hover:to-amber-700 transition shadow-lg hover:shadow-xl flex items-center justify-center"
-                                >
-                                    <CloudUploadIcon className="mr-2" />
-                                    Upload Your Image
-                                </label>
-                                <p className="text-gray-600 text-sm mt-3">
-                                    or drag and drop an image here
-                                </p>
-
-                                <input
-                                    id="imageUpload"
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleImageUpload}
-                                    className="hidden"
-                                />
                             </div>
-                        </>
+                            <h2 className="text-2xl md:text-3xl font-bold mb-3" style={{ color: colors.space_cadet }}>
+                            Transform Your Images in Seconds
+                            </h2>
+                            <p className="text-lg mb-6 px-4 max-w-xl" style={{ color: colors.ultra_violet }}>
+                            The Ultimate Tool for Resizing and Cropping at the Same Time
+                            </p>
+                            <label
+                                htmlFor="imageUpload"
+                                className="mt-2 px-8 py-3 text-white font-bold rounded-lg cursor-pointer transition shadow-lg hover:shadow-xl flex items-center justify-center"
+                                style={{ 
+                                    background: `linear-gradient(to right, ${colors.space_cadet}, ${colors.ultra_violet})`
+                                }}
+                            >
+                                <CloudUploadIcon className="mr-2" />
+                                Upload Your Image
+                            </label>
+                            <p className="text-sm mt-4" style={{ color: colors.ultra_violet }}>
+                                or drag and drop an image here
+                            </p>
+                            <input
+                                id="imageUpload"
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                className="hidden"
+                            />
+                        </div>
                     ) : (
                         <>
-                            <div className="crop-container mt-4 w-full h-[max(100vw,440px)] sm:h-[500px] relative rounded-md overflow-hidden">
+                            <div className="w-full flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-semibold" style={{ color: colors.space_cadet }}>Image Preview</h3>
+                            </div>
+
+                            <div className="crop-container w-full h-[400px] md:h-[60vh] relative rounded-md overflow-hidden shadow-lg" style={{ backgroundColor: colors.space_cadet }}>
                                 <Cropper
                                     image={image}
                                     crop={crop}
                                     zoom={zoom}
+                                    rotation={rotation}
                                     aspect={aspect}
                                     onCropChange={setCrop}
                                     onZoomChange={setZoom}
@@ -218,60 +246,85 @@ function ImageCropper() {
                                 />
                             </div>
 
-                            <div className="flex flex-wrap items-center justify-center gap-6 mt-6 w-full max-w-xl mx-auto">
-                                <div className="flex flex-col items-center">
-                                    <Tooltip title="Re-upload Image">
-                                        <IconButton
-                                            onClick={() => document.getElementById("reuploadInput").click()}
-                                            sx={{
-                                                color: "#0d3288ff",
-                                                "&:hover": { color: "#0c296cff" },
-                                            }}
-                                        >
-                                            <CloudUploadIcon fontSize="medium" />
-                                        </IconButton>
-                                    </Tooltip>
-                                    <span className="text-sm text-gray-700 mt-1 font-bold">Re-upload</span>
-                                </div>
-
-                                {/* Remove */}
-                                <div className="flex flex-col items-center">
-                                    <Tooltip title="Remove Image">
-                                        <IconButton
-                                            onClick={() => {
-                                                setImage(null);
-                                                setCroppedAreaPixels(null);
-                                            }}
-                                            sx={{
-                                                color: "#dc2626",
-                                                "&:hover": { color: "#b91c1c" },
-                                            }}
-                                        >
-                                            <DeleteIcon fontSize="medium" />
-                                        </IconButton>
-                                    </Tooltip>
-                                    <span className="text-sm text-gray-700 mt-1 font-bold">Remove</span>
-                                </div>
-
-                                {/* Download */}
-                                {image && (
-                                    <>
+                            {/* Icon-based controls - No slider bars */}
+                            <div className="w-full mt-3 max-w-md mx-auto">
+                                <div className="p-4 rounded-lg" > 
+                                    <div className="flex items-center justify-around">
                                         <div className="flex flex-col items-center">
-                                            <Tooltip title="Download Image">
+                                            <Tooltip title="Re-upload Image">
                                                 <IconButton
-                                                    onClick={downloadImage}
-                                                    sx={{
-                                                        color: "#f59e0b",
-                                                        "&:hover": { filter: "brightness(1.1)" },
-                                                    }}
+                                                    onClick={() => document.getElementById("reuploadInput").click()}
+                                                    sx={{ color: colors.ultra_violet, "&:hover": { backgroundColor: `${colors.ultra_violet}10` } }}
                                                 >
-                                                    <DownloadIcon fontSize="medium" />
+                                                    <CloudUploadIcon fontSize="medium" />
                                                 </IconButton>
                                             </Tooltip>
-                                            <span className="text-sm text-gray-700 mt-1 font-bold">Download</span>
+                                            <span className="text-xs mt-1" style={{ color: colors.ultra_violet }}>Re-upload</span>
                                         </div>
-                                    </>
-                                )}
+                                        <div className="flex flex-col items-center">
+                                            <Tooltip title="Remove Image">
+                                                <IconButton
+                                                    onClick={() => { setImage(null); setCroppedAreaPixels(null); }}
+                                                    sx={{ color: colors.rose_quartz, "&:hover": { backgroundColor: `${colors.rose_quartz}10` } }}
+                                                >
+                                                    <DeleteIcon fontSize="medium" />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <span className="text-xs mt-1" style={{ color: colors.ultra_violet }}>Delete Image</span>
+                                        </div>
+
+                                        {/* Rotate Left */}
+                                        <div className="flex flex-col items-center">
+                                            <Tooltip title="Rotate Left">
+                                                <IconButton
+                                                    onClick={handleRotateLeft}
+                                                    sx={{ color: colors.ultra_violet, "&:hover": { backgroundColor: `${colors.ultra_violet}10` } }}
+                                                >
+                                                    <RotateLeftIcon />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <span className="text-xs mt-1" style={{ color: colors.ultra_violet }}>Rotate Left</span>
+                                        </div>
+
+                                        {/* Rotate Right */}
+                                        <div className="flex flex-col items-center">
+                                            <Tooltip title="Rotate Right">
+                                                <IconButton
+                                                    onClick={handleRotateRight}
+                                                    sx={{ color: colors.ultra_violet, "&:hover": { backgroundColor: `${colors.ultra_violet}10` } }}
+                                                >
+                                                    <RotateRightIcon />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <span className="text-xs mt-1" style={{ color: colors.ultra_violet }}>Rotate Right</span>
+                                        </div>
+
+                                        {/* Reset */}
+                                        <div className="flex flex-col items-center">
+                                            <Tooltip title="Reset All Adjustments">
+                                                <IconButton
+                                                    onClick={handleReset}
+                                                    sx={{ color: colors.rose_quartz, "&:hover": { backgroundColor: `${colors.rose_quartz}10` } }}
+                                                >
+                                                    <RestoreIcon />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <span className="text-xs mt-1" style={{ color: colors.ultra_violet }}>Reset</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Download Button */}
+                                <button
+                                    onClick={downloadImage}
+                                    className="w-full mt-2 py-3 px-4 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 flex items-center justify-center"
+                                    style={{ 
+                                        background: `linear-gradient(to right, ${colors.ultra_violet}, ${colors.space_cadet})`
+                                    }}
+                                >
+                                    <DownloadIcon className="mr-2" />
+                                    Download Image
+                                </button>
                             </div>
 
                             <input
@@ -284,181 +337,202 @@ function ImageCropper() {
                         </>
                     )}
                 </div>
+            </div>
 
-                <div className="ratio-input w-full max-w-6xl mx-auto px-4 mt-8 " >
-                    <div className="flex flex-col lg:flex-row gap-10">
-                        {/* Resolution Card */}
-                        <div className="w-full lg:w-1/2 ">
-                            <div className="text-center mb-8">
-                                <h3 className="text-2xl font-semibold text-gray-800 mb-2">Professional Aspect Ratios</h3>
-                                <p className="text-gray-500">Optimized for all platforms and use cases</p>
-                            </div>
+            {/* Right Controls/Tools - 1 column on large screens */}
+            <div className="flex flex-col h-full bg-white shadow-inner p-5 md:p-6 overflow-y-auto" >
+                {/* Header */}
+                <div className="sticky top-0 bg-white pb-4 z-10 border-b" style={{ borderColor: `${colors.rose_quartz}50` }}>
+                    <h2 className="text-xl font-bold mb-2" style={{ color: colors.space_cadet }}>Editing Tools</h2>
+                    <div className="flex space-x-4">
+                        <button
+                            className="py-2 px-4 font-medium text-sm flex items-center gap-1 border-b-2"
+                            style={{ 
+                                color: colors.ultra_violet,
+                                borderColor: colors.ultra_violet
+                            }}
+                        >
+                            <AspectRatioIcon className="w-4 h-4" /> Crop & Resize
+                        </button>
+                    </div>
+                </div>
 
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-12">
-                                {resolutions.map(({ label, w, h }) => (
-                                    <button
-                                        key={label}
-                                        onClick={() => handleResolutionChange(label, w, h)}
-                                        className={`py-3 px-2 min-w-[80px] rounded-xl transition-all duration-200 text-center border font-semibold focus:outline-none
-                ${selectedLabel === label
-                                                ? "bg-amber-50 border-amber-400 shadow-md ring-2 ring-amber-300 text-amber-700"
-                                                : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-amber-100 hover:border-amber-200"}
-              `}
-                                    >
-                                        <span className="block text-base">{label}</span>
-                                        <span className="block text-xs text-gray-500 mt-1">
-                                            {label !== 'Custom' ? `${w}×${h}` : ''}
-                                        </span>
-                                    </button>
-                                ))}
-                            </div>
+                {/* Content */}
+                <div className="mt-4 flex-1 space-y-8">
+                    {/* Aspect Ratios */}
+                    <div>
+                        <h3 className="text-lg font-semibold mb-3" style={{ color: colors.space_cadet }}>Aspect Ratios</h3>
+                        <div className="grid grid-cols-3 gap-3">
+                            {/* Original */}
+                            <button
+                                key="Original"
+                                onClick={() => handleResolutionChange("Original", 0, 0)}
+                                className={`py-3 px-2 rounded-lg border font-medium text-center transition-all duration-200 flex flex-col items-center justify-center
+            ${selectedLabel === "Original"
+                                        ? "shadow-md ring-2"
+                                        : "hover:border-gray-200"}`}
+                                // style={{
+                                //     backgroundColor: selectedLabel === "Original" ? `${colors.ultra_violet}10` : `${colors.isabelline}`,
+                                //     borderColor: selectedLabel === "Original" ? colors.ultra_violet : `${colors.rose_quartz}50`,
+                                //     color: selectedLabel === "Original" ? colors.ultra_violet : colors.space_cadet,
+                                //     ringColor: `${colors.ultra_violet}30`
+                                // }}
+                            >
+                                <span className="text-xs font-medium">Original</span>
+                            </button>
 
-                            <div className="bg-amber-50 p-6 rounded-lg border border-amber-100">
-                                <h4 className="text-gray-700 font-medium mb-4 flex items-center justify-center">
-                                    <span className="bg-amber-100 text-amber-700 rounded-full w-6 h-6 flex items-center justify-center mr-2">↔</span>
-                                    Custom Dimensions
-                                </h4>
-
-                                <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-                                    <div className="w-full">
-                                        <label className="block text-sm text-gray-600 mb-1">Width</label>
-                                        <div className="relative">
-                                            <input
-                                                type="number"
-                                                value={targetWidth}
-                                                onChange={(e) => {
-                                                    const value = e.target.value;
-                                                    if (value === '' || !isNaN(value)) {
-                                                        handleCustomDimensionChange(value === '' ? '' : Number(value), targetHeight);
-                                                    }
-                                                }}
-                                                placeholder="100"
-                                                className="w-full pl-4 pr-10 py-3 rounded-lg border border-gray-200 bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-400 focus:border-amber-400"
-                                            />
-                                            <span className="absolute right-3 top-3.5 text-gray-400 text-sm">px</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="w-full">
-                                        <label className="block text-sm text-gray-600 mb-1">Height</label>
-                                        <div className="relative">
-                                            <input
-                                                type="number"
-                                                value={targetHeight}
-                                                onChange={(e) => {
-                                                    const value = e.target.value;
-                                                    if (value === '' || !isNaN(value)) {
-                                                        handleCustomDimensionChange(targetWidth, value === '' ? '' : Number(value));
-                                                    }
-                                                }}
-                                                placeholder="100"
-                                                className="w-full pl-4 pr-10 py-3 rounded-lg border border-gray-200 bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-400 focus:border-amber-400"
-                                            />
-                                            <span className="absolute right-3 top-3.5 text-gray-400 text-sm">px</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            {/* Dynamic Ratios */}
+                            {resolutions.map(({ label, w, h }) => (
+                                <button
+                                    key={label}
+                                    onClick={() => handleResolutionChange(label, w, h)}
+                                    className={`py-3 px-2 rounded-lg border font-medium text-center transition-all duration-200 flex flex-col items-center justify-center
+              ${selectedLabel === label
+                                            ? "shadow-md ring-2"
+                                            : "hover:border-gray-200"}`}
+                                    // style={{
+                                    //     backgroundColor: selectedLabel === label ? `${colors.ultra_violet}10` : `${colors.isabelline}`,
+                                    //     borderColor: selectedLabel === label ? colors.ultra_violet : `${colors.rose_quartz}50`,
+                                    //     color: selectedLabel === label ? colors.ultra_violet : colors.space_cadet,
+                                    //     ringColor: `${colors.ultra_violet}30`
+                                    // }}
+                                >
+                                    <span className="block text-xs mt-1">{label}</span>
+                                </button>
+                            ))}
                         </div>
 
-
-                        {/* Image Compressor */}
-                        <div className="w-full lg:w-1/2 ">
-                            <div className="text-center mb-8">
-                                <h2 className="text-2xl font-semibold text-gray-800 mb-2">Image Compressor</h2>
-                                <p className="text-gray-500 ">Best web app to compress image files online for free.</p>
-                            </div>
-                            <div className="w-full grid grid-cols-1 gap-6 mb-6">
+                        {/* Custom Dimensions */}
+                        <div className="p-4 rounded-xl border mt-6" style={{ 
+                            backgroundColor: `${colors.ultra_violet}08`,
+                            borderColor: `${colors.ultra_violet}20`
+                        }}>
+                            <h4 className="font-medium mb-3 flex items-center" style={{ color: colors.space_cadet }}>
+                                <AspectRatioIcon className="mr-2" style={{ color: colors.ultra_violet }} /> Custom Dimensions
+                            </h4>
+                            <div className="grid grid-cols-2 gap-4">
+                                {/* Width */}
                                 <div>
-                                    <label className="text-gray-600 text-sm font-medium block mb-2 flex items-center justify-center">
-                                        Output Format
-                                    </label>
+                                    <label className="block text-xs mb-1" style={{ color: colors.ultra_violet }}>Width (px)</label>
                                     <div className="relative">
-                                        <select
-                                            value={format}
-                                            onChange={(e) => setFormat(e.target.value)}
-                                            className="w-full pl-4 pr-10 py-3 rounded-lg border border-gray-200 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-amber-400 focus:border-amber-400 appearance-none"
-                                        >
-                                            <option value="image/jpeg">JPG – Best for photos</option>
-                                            <option value="image/png">PNG – Supports transparency (no quality setting)</option>
-                                            <option value="image/webp">WEBP – Modern format, small size</option>
-                                            <option value="image/avif">AVIF – Best compression & quality</option>
-                                            <option value="image/bmp">BMP – Uncompressed, large size</option>
-                                            <option value="image/tiff">TIFF – High-quality, used in publishing</option>
-                                        </select>
-                                        <span className="absolute right-3 top-3.5 text-gray-400 text-xs">▼</span>
+                                        <input
+                                            type="number"
+                                            value={targetWidth}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                handleCustomDimensionChange(value === '' ? '' : Number(value), targetHeight);
+                                            }}
+                                            placeholder="Width"
+                                            className="w-full pl-3 pr-10 py-2 rounded-lg border bg-white placeholder-gray-400 focus:outline-none focus:ring-2"
+                                            style={{ 
+                                                borderColor: `${colors.rose_quartz}80`,
+                                                color: colors.space_cadet,
+                                                focusRingColor: colors.ultra_violet,
+                                                focusBorderColor: colors.ultra_violet
+                                            }}
+                                        />
+                                        <span className="absolute right-3 top-2.5 text-xs" style={{ color: colors.ultra_violet }}>px</span>
                                     </div>
                                 </div>
+
+                                {/* Height */}
                                 <div>
-                                    <label className="text-gray-600 text-sm font-medium block mb-2 flex items-center justify-center">
-                                        Quality: <span className="ml-2 font-bold text-amber-600">{quality}%</span>
-                                    </label>
-                                    <div className="flex items-center gap-4 w-full">
-                                        <div className="flex-1 relative h-6 flex items-center">
-                                            <div className="absolute w-full h-1.5 bg-gray-100 rounded-full"></div>
-                                            <div
-                                                className="absolute h-1.5 bg-gradient-to-r from-amber-400 to-amber-500 rounded-full"
-                                                style={{ width: `${quality}%` }}
-                                            ></div>
-                                            <input
-                                                type="range"
-                                                min={10}
-                                                max={100}
-                                                step={1}
-                                                value={quality}
-                                                disabled={format === "image/png"}
-                                                onChange={(e) => setQuality(parseInt(e.target.value))}
-                                                className="absolute w-full h-6 opacity-0 cursor-pointer disabled:cursor-not-allowed z-20"
-                                            />
-                                            <div
-                                                className="absolute h-4 w-4 bg-white border-2 border-amber-500 rounded-full shadow-md transform -translate-x-1/2 z-10 pointer-events-none transition-transform"
-                                                style={{ left: `${quality}%` }}
-                                            >
-                                                <div className="absolute inset-0 m-auto h-2 w-2 bg-amber-500 rounded-full"></div>
-                                            </div>
-                                        </div>
-
-
-                                        {/* Value display */}
-                                        <div className="flex items-center justify-center bg-white border border-amber-200 text-amber-700 font-medium text-sm w-16 h-8 rounded-lg shadow-inner">
-                                            {quality}%
-                                        </div>
+                                    <label className="block text-xs mb-1" style={{ color: colors.ultra_violet }}>Height (px)</label>
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            value={targetHeight}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                handleCustomDimensionChange(targetWidth, value === '' ? '' : Number(value));
+                                            }}
+                                            placeholder="Height"
+                                            className="w-full pl-3 pr-10 py-2 rounded-lg border bg-white placeholder-gray-400 focus:outline-none focus:ring-2"
+                                            style={{ 
+                                                borderColor: `${colors.rose_quartz}80`,
+                                                color: colors.space_cadet,
+                                                focusRingColor: colors.ultra_violet,
+                                                focusBorderColor: colors.ultra_violet
+                                            }}
+                                        />
+                                        <span className="absolute right-3 top-2.5 text-xs" style={{ color: colors.ultra_violet }}>px</span>
                                     </div>
-                                    {format === "image/png" && (
-                                        <p className="text-xs text-gray-500 mt-2 text-center italic">
-                                            Quality adjustment is not available for PNG format
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="mt-6">
-                                <button
-                                    onClick={downloadImage}
-                                    className="w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-opacity-50 flex items-center justify-center"
-                                >
-                                    Download High-Quality Image
-                                </button>
-                                <p className="text-center text-xs text-gray-500 mt-2">No watermarks • Unlimited exports</p>
-                            </div>
-                            <div className="mt-2 p-3 bg-amber-50 border border-amber-100 rounded-lg flex items-start">
-                                <div className="bg-amber-100 text-amber-700 rounded-full w-5 h-5 flex items-center justify-center mr-3 flex-shrink-0 font-medium">i</div>
-                                <div>
-                                    <p className="text-sm text-gray-700 font-medium mb-1">Quality vs. File Size</p>
-                                    <p className="text-xs text-gray-600 leading-relaxed">
-                                        Lower values reduce both image quality <span className="font-semibold text-amber-700">and file size</span> significantly.
-                                        For most images, <span className="font-semibold">80-90%</span> provides the best balance between quality and compression.
-                                    </p>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    {/* Output Settings */}
+                    <div>
+                        <h3 className="text-lg font-semibold mb-3 flex items-center gap-2" style={{ color: colors.space_cadet }}>
+                            <SettingsIcon className="w-5 h-5" style={{ color: colors.ultra_violet }} /> Output Settings
+                        </h3>
+
+                        {/* File Format */}
+                        <div className="mb-4">
+                            <label className="text-sm font-medium block mb-2" style={{ color: colors.space_cadet }}>File Format</label>
+                            <select
+                                value={format}
+                                onChange={(e) => setFormat(e.target.value)}
+                                className="w-full pl-3 pr-10 py-2 rounded-lg border bg-white focus:outline-none focus:ring-2"
+                                style={{ 
+                                    borderColor: `${colors.rose_quartz}80`,
+                                    color: colors.space_cadet,
+                                    focusRingColor: colors.ultra_violet,
+                                    focusBorderColor: colors.ultra_violet
+                                }}
+                            >
+                                <option value="image/jpeg">JPG - Best for photos</option>
+                                <option value="image/png">PNG - Supports transparency</option>
+                                <option value="image/webp">WEBP - Modern format</option>
+                                <option value="image/avif">AVIF - Best compression</option>
+                            </select>
+                        </div>
+                        {/* Quality Slider */}
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="text-sm font-medium" style={{ color: colors.space_cadet }}>Quality</label>
+                                <span className="font-bold text-sm" style={{ color: colors.ultra_violet }}>{quality}%</span>
+                            </div>
+                            <div className="flex items-center gap-3 w-full">
+                                <div className="flex-1 relative h-6 flex items-center">
+                                    <div className="absolute w-full h-2 rounded-full" style={{ backgroundColor: `${colors.rose_quartz}40` }}></div>
+                                    <div
+                                        className="absolute h-2 rounded-full"
+                                        style={{ 
+                                            width: `${quality}%`,
+                                            background: `linear-gradient(to right, ${colors.ultra_violet}, ${colors.space_cadet})`
+                                        }}
+                                    ></div>
+                                    <input
+                                        type="range"
+                                        min={10}
+                                        max={100}
+                                        step={1}
+                                        value={quality}
+                                        disabled={format === "image/png"}
+                                        onChange={(e) => setQuality(parseInt(e.target.value))}
+                                        className="absolute w-full h-6 opacity-0 cursor-pointer disabled:cursor-not-allowed z-20"
+                                    />
+                                    <div
+                                        className="absolute h-4 w-4 bg-white border-2 rounded-full shadow-md transform -translate-x-1/2 z-10 pointer-events-none transition-transform"
+                                        style={{ 
+                                            left: `${quality}%`,
+                                            borderColor: colors.ultra_violet
+                                        }}
+                                    >
+                                        <div className="absolute inset-0 m-auto h-2 w-2 rounded-full" style={{ backgroundColor: colors.ultra_violet }}></div>
+                                    </div>
+                                </div>
+                            </div>
+                            {format === "image/png" && (
+                                <p className="text-xs mt-2 italic" style={{ color: colors.ultra_violet }}>
+                                    Quality adjustment is not available for PNG format
+                                </p>
+                            )}
+                        </div>
+                    </div>
                 </div>
-
-                <div className="w-full mt-8 rounded-xl shadow-lg overflow-hidden border border-gray-100 bg-white">
-
-                </div>
-
             </div>
         </div>
     );

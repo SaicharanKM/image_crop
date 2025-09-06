@@ -1,41 +1,5 @@
 @import "tailwindcss";
 
 
-.bg-dark {
-  background-color: #1f2937;
-}
-
-.bg-primary {
-  background-color: #f59e0b;
-}
-
-.text-black {
-  color: #000000;
-}
-
-.text-white {
-  color: #ffffff;
-}
-.text.dark{
-  color: #1f2937;
-}
 
 
-html, body {
-  height: 100%;
-  margin: 0;
-}
-
-#root {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-main {
-  flex: 1;
-}
-
-.footer {
-  margin-top: auto;
-}

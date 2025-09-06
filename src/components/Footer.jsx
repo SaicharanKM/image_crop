@@ -11,14 +11,14 @@ function Footer() {
                     <div>
                         <div className="flex items-center mb-4">
                             <img
-                                src="/android-chrome-192x192.png"
+                                src="/PixFitlogo.jpg"
                                 alt="PixFit Pro Logo"
                                 className="w-10 h-10 mr-3 transition duration-300 ease-in-out hover:shadow-[0_0_10px_3px_rgba(255,255,255,0.8)]"
                             />
                             <h4 className="text-2xl font-bold text-[#f5f0eb]">PixFit</h4>
                         </div>
                         <p className="text-sm text-[#b8b0a9] leading-relaxed">
-                            Smart tools for precise image editing—crafted for creators and professionals.
+                        Pixfix – a smart tool for cropping, editing, and exporting images in HD with ease.
                         </p>
                     </div>
 
