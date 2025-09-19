@@ -13,163 +13,167 @@ import RestoreIcon from '@mui/icons-material/Restore';
 
 // Color palette
 const colors = {
-  space_cadet: '#22223b',
-  ultra_violet: '#4a4e69',
-  rose_quartz: '#9a8c98',
-  pale_dogwood: '#c9ada7',
-  isabelline: '#f2e9e4'
+    space_cadet: '#22223b',
+    ultra_violet: '#4a4e69',
+    rose_quartz: '#9a8c98',
+    pale_dogwood: '#c9ada7',
+    isabelline: '#f2e9e4'
 };
 
 const resolutions = [
-  { label: "16:9", w: 16, h: 9 },
-  { label: "4:3", w: 4, h: 3 },
-  { label: "1:1", w: 1, h: 1 },
-  { label: "3:2", w: 3, h: 2 },
-  { label: "2:3", w: 2, h: 3 },
-  { label: "4:5", w: 4, h: 5 },
-  { label: "9:16", w: 9, h: 16 },
-  { label: "21:9", w: 21, h: 9 }
+    { label: "16:9", w: 16, h: 9 },
+    { label: "4:3", w: 4, h: 3 },
+    { label: "1:1", w: 1, h: 1 },
+    { label: "3:2", w: 3, h: 2 },
+    { label: "2:3", w: 2, h: 3 },
+    { label: "4:5", w: 4, h: 5 },
+    { label: "9:16", w: 9, h: 16 },
+    { label: "21:9", w: 21, h: 9 }
 ];
 
 // helper to create Pixfit filename
 const getPixfitFileName = (originalName, format) => {
-  if (!originalName) {
-    return `Pixfit.${format.split("/")[1] || "jpg"}`;
-  }
-  const dotIndex = originalName.lastIndexOf(".");
-  if (dotIndex === -1) {
-    return `${originalName}Pixfit.${format.split("/")[1] || "jpg"}`;
-  }
-  const name = originalName.substring(0, dotIndex);
-  const ext = originalName.substring(dotIndex + 1);
-  return `${name}Pixfit.${ext}`;
+    if (!originalName) {
+        return `Pixfit.${format.split("/")[1] || "jpg"}`;
+    }
+    const dotIndex = originalName.lastIndexOf(".");
+    if (dotIndex === -1) {
+        return `${originalName}Pixfit.${format.split("/")[1] || "jpg"}`;
+    }
+    const name = originalName.substring(0, dotIndex);
+    const ext = originalName.substring(dotIndex + 1);
+    return `${name}Pixfit.${ext}`;
 };
 
 function ImageCropper() {
-  const [image, setImage] = useState(null);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [rotation, setRotation] = useState(0);
-  const [aspect, setAspect] = useState(undefined);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-  const [targetWidth, setTargetWidth] = useState("");
-  const [targetHeight, setTargetHeight] = useState("");
-  const [isDragging, setIsDragging] = useState(false);
-  const [selectedLabel, setSelectedLabel] = useState("Original");
-  const [format, setFormat] = useState('image/jpeg');
-  const [quality, setQuality] = useState(90);
-  const [activeTab, setActiveTab] = useState('crop');
-  const lastBlobUrlRef = useRef(null);
-  const fileNameRef = useRef(null); // <-- store original file name
+    const [image, setImage] = useState(null);
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [rotation, setRotation] = useState(0);
+    const [aspect, setAspect] = useState(undefined);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+    const [targetWidth, setTargetWidth] = useState("");
+    const [targetHeight, setTargetHeight] = useState("");
+    const [isDragging, setIsDragging] = useState(false);
+    const [selectedLabel, setSelectedLabel] = useState("Original");
+    const [format, setFormat] = useState('image/jpeg');
+    const [quality, setQuality] = useState(90);
+    const [activeTab, setActiveTab] = useState('crop');
+    const lastBlobUrlRef = useRef(null);
+    const fileNameRef = useRef(null);
 
-  useEffect(() => {
-    return () => {
-      if (lastBlobUrlRef.current) {
-        URL.revokeObjectURL(lastBlobUrlRef.current);
-      }
+    useEffect(() => {
+        return () => {
+            if (lastBlobUrlRef.current) {
+                URL.revokeObjectURL(lastBlobUrlRef.current);
+            }
+        };
+    }, []);
+
+    const onCropComplete = useCallback((_, croppedPixels) => {
+        setCroppedAreaPixels(croppedPixels);
+    }, []);
+
+    const handleImageUpload = (e) => {
+        const files =
+            e.target.files ||
+            (e.dataTransfer && e.dataTransfer.files);
+        const file = files && files[0];
+        if (file) {
+            if (lastBlobUrlRef.current) {
+                URL.revokeObjectURL(lastBlobUrlRef.current);
+                lastBlobUrlRef.current = null;
+            }
+            setCrop({ x: 0, y: 0 });
+            setZoom(1);
+            setRotation(0);
+            setImage(URL.createObjectURL(file));
+            fileNameRef.current = file.name; // save original file name
+        }
     };
-  }, []);
 
-  const onCropComplete = useCallback((_, croppedPixels) => {
-    setCroppedAreaPixels(croppedPixels);
-  }, []);
+    const handleResolutionChange = (label, w, h) => {
+        setSelectedLabel(label);
+        if (label === "Original") {
+            setAspect(undefined);
+            setTargetWidth(0);
+            setTargetHeight(0);
+        } else if (label === "Custom") {
+            setAspect(undefined);
+        } else {
+            setTargetWidth(w);
+            setTargetHeight(h);
+            setAspect(w / h);
+        }
+    };
 
-  const handleImageUpload = (e) => {
-    const files =
-      e.target.files ||
-      (e.dataTransfer && e.dataTransfer.files);
-    const file = files && files[0];
-    if (file) {
-      if (lastBlobUrlRef.current) {
-        URL.revokeObjectURL(lastBlobUrlRef.current);
-        lastBlobUrlRef.current = null;
-      }
-      setCrop({ x: 0, y: 0 });
-      setZoom(1);
-      setRotation(0);
-      setImage(URL.createObjectURL(file));
-      fileNameRef.current = file.name; // save original file name
-    }
-  };
+    const handleCustomDimensionChange = (field, value) => {
+        const num = value === "" ? "" : Number(value);
 
-  const handleResolutionChange = (label, w, h) => {
-    setSelectedLabel(label);
-    if (label === "Original") {
-      setAspect(undefined);
-      setTargetWidth(0);
-      setTargetHeight(0);
-    } else if (label === "Custom") {
-      setAspect(undefined);
-    } else {
-      setTargetWidth(w);
-      setTargetHeight(h);
-      setAspect(w / h);
-    }
-  };
+        if (field === "width") {
+            setTargetWidth(num);
+            if (num && targetHeight) setAspect(num / targetHeight);
+        } else if (field === "height") {
+            setTargetHeight(num);
+            if (targetWidth && num) setAspect(targetWidth / num);
+        }
 
-  const handleCustomDimensionChange = (width, height) => {
-    setTargetWidth(width);
-    setTargetHeight(height);
-    if (width && height) {
-      setAspect(width / height);
-    } else {
-      setAspect(undefined);
-    }
-    setSelectedLabel("Custom");
-  };
+        setSelectedLabel("Custom");
+    };
 
-  const downloadImage = async () => {
-    if (!image || !croppedAreaPixels) {
-      alert("Please upload an image and adjust the crop area first");
-      return;
-    }
-    try {
-      const width = selectedLabel === "Custom" ? parseInt(targetWidth) : 0;
-      const height = selectedLabel === "Custom" ? parseInt(targetHeight) : 0;
 
-      const croppedImgUrl = await getCroppedImg(
-        image,
-        croppedAreaPixels,
-        width,
-        height,
-        format,
-        quality / 100,
-        rotation
-      );
+    const downloadImage = async () => {
+        if (!image || !croppedAreaPixels) {
+            alert("Please upload an image and adjust the crop area first");
+            return;
+        }
+        try {
+            const width = selectedLabel === "Custom" ? parseInt(targetWidth) : 0;
+            const height = selectedLabel === "Custom" ? parseInt(targetHeight) : 0;
 
-      if (lastBlobUrlRef.current) {
-        URL.revokeObjectURL(lastBlobUrlRef.current);
-      }
-      lastBlobUrlRef.current = croppedImgUrl;
+            const croppedImgUrl = await getCroppedImg(
+                image,
+                croppedAreaPixels,
+                width,
+                height,
+                format,
+                quality / 100,
+                rotation
+            );
 
-      const fileName = getPixfitFileName(fileNameRef.current, format);
+            if (lastBlobUrlRef.current) {
+                URL.revokeObjectURL(lastBlobUrlRef.current);
+            }
+            lastBlobUrlRef.current = croppedImgUrl;
 
-      const link = document.createElement("a");
-      link.download = fileName;
-      link.href = croppedImgUrl;
-      link.click();
-    } catch (e) {
-      console.error("Download failed:", e);
-      alert("Something went wrong while exporting.");
-    }
-  };
+            const fileName = getPixfitFileName(fileNameRef.current, format);
 
-  const handleRotateLeft = () => {
-    setRotation(prev => (prev - 90) % 360);
-  };
+            const link = document.createElement("a");
+            link.download = fileName;
+            link.href = croppedImgUrl;
+            link.click();
+        } catch (e) {
+            console.error("Download failed:", e);
+            alert("Something went wrong while exporting.");
+        }
+    };
 
-  const handleRotateRight = () => {
-    setRotation(prev => (prev + 90) % 360);
-  };
+    const handleRotateLeft = () => {
+        setRotation(prev => (prev - 90) % 360);
+    };
 
-  const handleReset = () => {
-    setZoom(1);
-    setRotation(0);
-    setCrop({ x: 0, y: 0 });
-  };
+    const handleRotateRight = () => {
+        setRotation(prev => (prev + 90) % 360);
+    };
+
+    const handleReset = () => {
+        setZoom(1);
+        setRotation(0);
+        setCrop({ x: 0, y: 0 });
+    };
 
     return (
-        <div className={`min-h-screen w-full grid grid-cols-1 lg:grid-cols-3 overflow-hidden mt-[60px]`} style={{ 
+        <div className={`min-h-screen w-full grid grid-cols-1 lg:grid-cols-3 overflow-hidden mt-[60px]`} style={{
             background: `linear-gradient(to bottom right, ${colors.pale_dogwood}, ${colors.isabelline}, ${colors.rose_quartz})`
         }}>
 
@@ -201,15 +205,15 @@ function ImageCropper() {
                                 </div>
                             </div>
                             <h2 className="text-2xl md:text-3xl font-bold mb-3" style={{ color: colors.space_cadet }}>
-                            Transform Your Images in Seconds
+                                Transform Your Images in Seconds
                             </h2>
                             <p className="text-lg mb-6 px-4 max-w-xl" style={{ color: colors.ultra_violet }}>
-                            The Ultimate Tool for Resizing and Cropping at the Same Time
+                                The Ultimate Tool for Resizing and Cropping at the Same Time
                             </p>
                             <label
                                 htmlFor="imageUpload"
                                 className="mt-2 px-8 py-3 text-white font-bold rounded-lg cursor-pointer transition shadow-lg hover:shadow-xl flex items-center justify-center"
-                                style={{ 
+                                style={{
                                     background: `linear-gradient(to right, ${colors.space_cadet}, ${colors.ultra_violet})`
                                 }}
                             >
@@ -248,7 +252,7 @@ function ImageCropper() {
 
                             {/* Icon-based controls - No slider bars */}
                             <div className="w-full mt-3 max-w-md mx-auto">
-                                <div className="p-4 rounded-lg" > 
+                                <div className="p-4 rounded-lg" >
                                     <div className="flex items-center justify-around">
                                         <div className="flex flex-col items-center">
                                             <Tooltip title="Re-upload Image">
@@ -318,7 +322,7 @@ function ImageCropper() {
                                 <button
                                     onClick={downloadImage}
                                     className="w-full mt-2 py-3 px-4 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 flex items-center justify-center"
-                                    style={{ 
+                                    style={{
                                         background: `linear-gradient(to right, ${colors.ultra_violet}, ${colors.space_cadet})`
                                     }}
                                 >
@@ -347,7 +351,7 @@ function ImageCropper() {
                     <div className="flex space-x-4">
                         <button
                             className="py-2 px-4 font-medium text-sm flex items-center gap-1 border-b-2"
-                            style={{ 
+                            style={{
                                 color: colors.ultra_violet,
                                 borderColor: colors.ultra_violet
                             }}
@@ -366,20 +370,16 @@ function ImageCropper() {
                             {/* Original */}
                             <button
                                 key="Original"
-                                onClick={() => handleResolutionChange("Original", 0, 0)}
+                                onClick={() => handleResolutionChange("Original")}
                                 className={`py-3 px-2 rounded-lg border font-medium text-center transition-all duration-200 flex flex-col items-center justify-center
-            ${selectedLabel === "Original"
+    ${selectedLabel === "Original"
                                         ? "shadow-md ring-2"
                                         : "hover:border-gray-200"}`}
-                                // style={{
-                                //     backgroundColor: selectedLabel === "Original" ? `${colors.ultra_violet}10` : `${colors.isabelline}`,
-                                //     borderColor: selectedLabel === "Original" ? colors.ultra_violet : `${colors.rose_quartz}50`,
-                                //     color: selectedLabel === "Original" ? colors.ultra_violet : colors.space_cadet,
-                                //     ringColor: `${colors.ultra_violet}30`
-                                // }}
                             >
                                 <span className="text-xs font-medium">Original</span>
                             </button>
+
+
 
                             {/* Dynamic Ratios */}
                             {resolutions.map(({ label, w, h }) => (
@@ -390,12 +390,12 @@ function ImageCropper() {
               ${selectedLabel === label
                                             ? "shadow-md ring-2"
                                             : "hover:border-gray-200"}`}
-                                    // style={{
-                                    //     backgroundColor: selectedLabel === label ? `${colors.ultra_violet}10` : `${colors.isabelline}`,
-                                    //     borderColor: selectedLabel === label ? colors.ultra_violet : `${colors.rose_quartz}50`,
-                                    //     color: selectedLabel === label ? colors.ultra_violet : colors.space_cadet,
-                                    //     ringColor: `${colors.ultra_violet}30`
-                                    // }}
+                                // style={{
+                                //     backgroundColor: selectedLabel === label ? `${colors.ultra_violet}10` : `${colors.isabelline}`,
+                                //     borderColor: selectedLabel === label ? colors.ultra_violet : `${colors.rose_quartz}50`,
+                                //     color: selectedLabel === label ? colors.ultra_violet : colors.space_cadet,
+                                //     ringColor: `${colors.ultra_violet}30`
+                                // }}
                                 >
                                     <span className="block text-xs mt-1">{label}</span>
                                 </button>
@@ -403,7 +403,7 @@ function ImageCropper() {
                         </div>
 
                         {/* Custom Dimensions */}
-                        <div className="p-4 rounded-xl border mt-6" style={{ 
+                        <div className="p-4 rounded-xl border mt-6" style={{
                             backgroundColor: `${colors.ultra_violet}08`,
                             borderColor: `${colors.ultra_violet}20`
                         }}>
@@ -413,22 +413,19 @@ function ImageCropper() {
                             <div className="grid grid-cols-2 gap-4">
                                 {/* Width */}
                                 <div>
-                                    <label className="block text-xs mb-1" style={{ color: colors.ultra_violet }}>Width (px)</label>
+                                    <label className="block text-xs mb-1" style={{ color: colors.ultra_violet }}>
+                                        Width (px)
+                                    </label>
                                     <div className="relative">
                                         <input
                                             type="number"
-                                            value={targetWidth}
-                                            onChange={(e) => {
-                                                const value = e.target.value;
-                                                handleCustomDimensionChange(value === '' ? '' : Number(value), targetHeight);
-                                            }}
+                                            value={targetWidth ?? ""}
+                                            onChange={(e) => handleCustomDimensionChange("width", e.target.value)}
                                             placeholder="Width"
                                             className="w-full pl-3 pr-10 py-2 rounded-lg border bg-white placeholder-gray-400 focus:outline-none focus:ring-2"
-                                            style={{ 
+                                            style={{
                                                 borderColor: `${colors.rose_quartz}80`,
                                                 color: colors.space_cadet,
-                                                focusRingColor: colors.ultra_violet,
-                                                focusBorderColor: colors.ultra_violet
                                             }}
                                         />
                                         <span className="absolute right-3 top-2.5 text-xs" style={{ color: colors.ultra_violet }}>px</span>
@@ -437,22 +434,19 @@ function ImageCropper() {
 
                                 {/* Height */}
                                 <div>
-                                    <label className="block text-xs mb-1" style={{ color: colors.ultra_violet }}>Height (px)</label>
+                                    <label className="block text-xs mb-1" style={{ color: colors.ultra_violet }}>
+                                        Height (px)
+                                    </label>
                                     <div className="relative">
                                         <input
                                             type="number"
-                                            value={targetHeight}
-                                            onChange={(e) => {
-                                                const value = e.target.value;
-                                                handleCustomDimensionChange(targetWidth, value === '' ? '' : Number(value));
-                                            }}
+                                            value={targetHeight ?? ""}
+                                            onChange={(e) => handleCustomDimensionChange("height", e.target.value)}
                                             placeholder="Height"
                                             className="w-full pl-3 pr-10 py-2 rounded-lg border bg-white placeholder-gray-400 focus:outline-none focus:ring-2"
-                                            style={{ 
+                                            style={{
                                                 borderColor: `${colors.rose_quartz}80`,
                                                 color: colors.space_cadet,
-                                                focusRingColor: colors.ultra_violet,
-                                                focusBorderColor: colors.ultra_violet
                                             }}
                                         />
                                         <span className="absolute right-3 top-2.5 text-xs" style={{ color: colors.ultra_violet }}>px</span>
@@ -468,14 +462,13 @@ function ImageCropper() {
                             <SettingsIcon className="w-5 h-5" style={{ color: colors.ultra_violet }} /> Output Settings
                         </h3>
 
-                        {/* File Format */}
                         <div className="mb-4">
                             <label className="text-sm font-medium block mb-2" style={{ color: colors.space_cadet }}>File Format</label>
                             <select
                                 value={format}
                                 onChange={(e) => setFormat(e.target.value)}
                                 className="w-full pl-3 pr-10 py-2 rounded-lg border bg-white focus:outline-none focus:ring-2"
-                                style={{ 
+                                style={{
                                     borderColor: `${colors.rose_quartz}80`,
                                     color: colors.space_cadet,
                                     focusRingColor: colors.ultra_violet,
@@ -499,7 +492,7 @@ function ImageCropper() {
                                     <div className="absolute w-full h-2 rounded-full" style={{ backgroundColor: `${colors.rose_quartz}40` }}></div>
                                     <div
                                         className="absolute h-2 rounded-full"
-                                        style={{ 
+                                        style={{
                                             width: `${quality}%`,
                                             background: `linear-gradient(to right, ${colors.ultra_violet}, ${colors.space_cadet})`
                                         }}
@@ -516,7 +509,7 @@ function ImageCropper() {
                                     />
                                     <div
                                         className="absolute h-4 w-4 bg-white border-2 rounded-full shadow-md transform -translate-x-1/2 z-10 pointer-events-none transition-transform"
-                                        style={{ 
+                                        style={{
                                             left: `${quality}%`,
                                             borderColor: colors.ultra_violet
                                         }}

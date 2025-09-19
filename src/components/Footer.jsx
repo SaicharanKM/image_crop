@@ -11,7 +11,7 @@ function Footer() {
                     <div>
                         <div className="flex items-center mb-4">
                             <img
-                                src="/PixFitlogo.jpg"
+                                src="/favicon.svg"
                                 alt="PixFit Pro Logo"
                                 className="w-10 h-10 mr-3 transition duration-300 ease-in-out hover:shadow-[0_0_10px_3px_rgba(255,255,255,0.8)]"
                             />
