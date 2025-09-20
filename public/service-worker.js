@@ -5,7 +5,6 @@ self.addEventListener("install", (event) => {
                 "/",
                 "/index.html",
                 "/PixFitlogo.png",
-                // add other static assets like CSS/JS files if needed
             ]);
         })
     );
