@@ -20,6 +20,12 @@ const colors = {
     isabelline: '#f2e9e4'
 };
 
+// ─────────────────────────────────────────────
+// Pixfit API config
+// ─────────────────────────────────────────────
+const API_URL = "https://pixfitapi.sandyeditz.in";
+const API_KEY = "pixfit_img_compress_sk_2026";
+
 const resolutions = [
     { label: "16:9", w: 16, h: 9 },
     { label: "4:3", w: 4, h: 3 },
@@ -33,15 +39,12 @@ const resolutions = [
 
 // helper to create Pixfit filename
 const getPixfitFileName = (originalName, format) => {
+    const ext = format.split("/")[1] === "jpeg" ? "jpg" : format.split("/")[1] || "jpg";
     if (!originalName) {
-        return `Pixfit.${format.split("/")[1] || "jpg"}`;
+        return `Pixfit.${ext}`;
     }
     const dotIndex = originalName.lastIndexOf(".");
-    if (dotIndex === -1) {
-        return `${originalName}Pixfit.${format.split("/")[1] || "jpg"}`;
-    }
-    const name = originalName.substring(0, dotIndex);
-    const ext = originalName.substring(dotIndex + 1);
+    const name = dotIndex === -1 ? originalName : originalName.substring(0, dotIndex);
     return `${name}Pixfit.${ext}`;
 };
 
@@ -59,6 +62,8 @@ function ImageCropper() {
     const [format, setFormat] = useState('image/jpeg');
     const [quality, setQuality] = useState(90);
     const [activeTab, setActiveTab] = useState('crop');
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [compressionInfo, setCompressionInfo] = useState(null);
     const lastBlobUrlRef = useRef(null);
     const fileNameRef = useRef(null);
 
@@ -87,8 +92,9 @@ function ImageCropper() {
             setCrop({ x: 0, y: 0 });
             setZoom(1);
             setRotation(0);
+            setCompressionInfo(null);
             setImage(URL.createObjectURL(file));
-            fileNameRef.current = file.name; // save original file name
+            fileNameRef.current = file.name;
         }
     };
 
@@ -121,40 +127,84 @@ function ImageCropper() {
         setSelectedLabel("Custom");
     };
 
-
     const downloadImage = async () => {
         if (!image || !croppedAreaPixels) {
             alert("Please upload an image and adjust the crop area first");
             return;
         }
+
+        setIsDownloading(true);
+        setCompressionInfo(null);
+
         try {
             const width = selectedLabel === "Custom" ? parseInt(targetWidth) : 0;
             const height = selectedLabel === "Custom" ? parseInt(targetHeight) : 0;
+            const formatName = format.split("/")[1];
 
-            const croppedImgUrl = await getCroppedImg(
+            const croppedBlob = await getCroppedImg(
                 image,
                 croppedAreaPixels,
                 width,
                 height,
                 format,
                 quality / 100,
-                rotation
+                rotation,
+                true
             );
+
+            const formData = new FormData();
+            formData.append("image", croppedBlob, `pixfit.${formatName}`);
+            formData.append("quality", quality);
+            formData.append("format", formatName);
+            if (width) formData.append("width", width);
+            if (height) formData.append("height", height);
+
+            const res = await fetch(`${API_URL}/api/compress`, {
+                method: "POST",
+                headers: { "x-api-key": API_KEY },
+                body: formData,
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || "Compression failed");
+            }
+
+            const savings = res.headers.get("X-Savings-Percent");
+            const originalSize = res.headers.get("X-Original-Size");
+            const compressedSize = res.headers.get("X-Compressed-Size");
+            const outWidth = res.headers.get("X-Output-Width");
+            const outHeight = res.headers.get("X-Output-Height");
+
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
 
             if (lastBlobUrlRef.current) {
                 URL.revokeObjectURL(lastBlobUrlRef.current);
             }
-            lastBlobUrlRef.current = croppedImgUrl;
+            lastBlobUrlRef.current = url;
 
             const fileName = getPixfitFileName(fileNameRef.current, format);
-
             const link = document.createElement("a");
             link.download = fileName;
-            link.href = croppedImgUrl;
+            link.href = url;
             link.click();
+
+            if (savings) {
+                setCompressionInfo({
+                    savings,
+                    originalSize: (originalSize / 1024).toFixed(0),
+                    compressedSize: (compressedSize / 1024).toFixed(0),
+                    width: outWidth,
+                    height: outHeight,
+                });
+            }
+
         } catch (e) {
             console.error("Download failed:", e);
-            alert("Something went wrong while exporting.");
+            alert(`Something went wrong: ${e.message}`);
+        } finally {
+            setIsDownloading(false);
         }
     };
 
@@ -177,184 +227,237 @@ function ImageCropper() {
             background: `linear-gradient(to bottom right, ${colors.pale_dogwood}, ${colors.isabelline}, ${colors.rose_quartz})`
         }}>
 
-            {/* Left: Canvas/Preview - 2 columns on large screens */}
+            {/* Left: Canvas/Preview */}
             <div className="lg:col-span-2 flex flex-col justify-center items-center h-full bg-white shadow-xl p-4 md:p-8">
-                <div
-                    className={`upload-section w-full max-w-4xl mx-auto p-4 min-h-[400px] md:min-h-[70vh] border-4 rounded-2xl border-dashed flex flex-col items-center justify-center text-center transition-all duration-300 ease-in-out transform shadow-lg ${isDragging
-                        ? `border-[${colors.ultra_violet}] bg-[${colors.ultra_violet}20] shadow-[0_0_20px_${colors.ultra_violet}50] scale-[1.02]`
-                        : `border-[${colors.rose_quartz}] bg-gradient-to-br from-[${colors.isabelline}] to-white`
-                        }`}
-                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                    onDragLeave={() => setIsDragging(false)}
-                    onDrop={(e) => {
-                        e.preventDefault();
-                        setIsDragging(false);
-                        handleImageUpload(e);
-                    }}
-                >
-                    {!image ? (
-                        <div className="flex flex-col items-center p-6" style={{ color: colors.space_cadet }}>
-                            <div className="relative mb-6">
-                                <div className="w-24 h-24 rounded-full flex items-center justify-center mb-4 mx-auto" style={{ backgroundColor: `${colors.rose_quartz}20` }}>
-                                    <CloudUploadIcon className="text-4xl" style={{ color: colors.ultra_violet }} />
-                                </div>
-                                <div className="absolute -top-2 -right-2">
-                                    <div className="text-white rounded-full px-3 py-1 text-xs font-bold animate-pulse" style={{ backgroundColor: colors.ultra_violet }}>
-                                        FREE
-                                    </div>
+                {!image ? (
+                    <div
+                        className="flex flex-col items-center justify-center text-center px-6 py-10 md:py-14"
+                        style={{ color: "#000" }}
+                    >
+                        {/* Icon */}
+                        <div className="relative mb-6">
+                            <div className="w-20 h-20 rounded-full flex items-center justify-center mb-4 mx-auto" style={{ backgroundColor: `${colors.rose_quartz}20` }}>
+                                <CloudUploadIcon className="text-4xl" style={{ color: "#000" }} />
+                            </div>
+                            <div className="absolute -top-2 -right-2">
+                                <div className="text-white rounded-full px-3 py-1 text-xs font-bold animate-pulse" style={{ backgroundColor: "#000" }}>
+                                    FREE
                                 </div>
                             </div>
-                            <h2 className="text-2xl md:text-3xl font-bold mb-3" style={{ color: colors.space_cadet }}>
-                                Transform Your Images in Seconds
-                            </h2>
-                            <p className="text-lg mb-6 px-4 max-w-xl" style={{ color: colors.ultra_violet }}>
-                                The Ultimate Tool for Resizing and Cropping at the Same Time
-                            </p>
-                            <label
-                                htmlFor="imageUpload"
-                                className="mt-2 px-8 py-3 text-white font-bold rounded-lg cursor-pointer transition shadow-lg hover:shadow-xl flex items-center justify-center"
-                                style={{
-                                    background: `linear-gradient(to right, ${colors.space_cadet}, ${colors.ultra_violet})`
-                                }}
-                            >
-                                <CloudUploadIcon className="mr-2" />
-                                Upload Your Image
-                            </label>
-                            <p className="text-sm mt-4" style={{ color: colors.ultra_violet }}>
-                                or drag and drop an image here
-                            </p>
-                            <input
-                                id="imageUpload"
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImageUpload}
-                                className="hidden"
+                        </div>
+
+                        {/* Heading */}
+                        <h1
+                            className="text-2xl md:text-3xl font-extrabold tracking-tight leading-tight max-w-3xl"
+                            style={{
+                                color: "#000",
+                                fontFamily: "'Poppins', sans-serif"
+                            }}
+                        >
+                            Resize, Crop & Convert Images in Seconds
+                        </h1>
+
+                        {/* Subtext */}
+                        <p
+                            className="mt-4 text-sm md:text-lg leading-relaxed max-w-2xl font-medium"
+                            style={{
+                                color: "#000",
+                                fontFamily: "'Inter', sans-serif"
+                            }}
+                        >
+                            Easily crop, resize, compress, and convert images for social media, websites, thumbnails, profile pictures, and more.
+                        </p>
+
+                        {/* Upload Button */}
+                        <label
+                            htmlFor="imageUpload"
+                            className="mt-8 inline-flex items-center gap-2 px-7 py-3 text-white font-medium rounded-xl cursor-pointer transition-all duration-200 hover:opacity-95 shadow-md"
+                            style={{ background: "#000" }}
+                        >
+                            <CloudUploadIcon className="text-xl" />
+                            Upload Image
+                        </label>
+
+                        {/* Helper Text */}
+                        <p
+                            className="mt-4 text-xs md:text-sm"
+                            style={{ color: "#000" }}
+                        >
+                            Supports JPG, PNG and WEBP
+                        </p>
+
+                        {/* Hidden Input */}
+                        <input
+                            id="imageUpload"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                        />
+                    </div>
+
+                ) : (
+                    <>
+                        <div className="w-full flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-semibold" style={{ color: "#000" }}>Image Preview</h3>
+                        </div>
+
+                        <div className="crop-container w-full h-[350px] md:h-[60vh] relative rounded-md overflow-hidden shadow-lg" style={{ backgroundColor: "#000" }}>
+                            <Cropper
+                                image={image}
+                                crop={crop}
+                                zoom={zoom}
+                                rotation={rotation}
+                                aspect={aspect}
+                                onCropChange={setCrop}
+                                onZoomChange={setZoom}
+                                onCropComplete={onCropComplete}
                             />
                         </div>
-                    ) : (
-                        <>
-                            <div className="w-full flex justify-between items-center mb-4">
-                                <h3 className="text-lg font-semibold" style={{ color: colors.space_cadet }}>Image Preview</h3>
+
+                        {/* Icon-based controls */}
+                        <div className="w-full mt-3 max-w-md mx-auto">
+                            <div className="p-4 rounded-lg">
+                                <div className="flex items-center justify-around">
+                                    <div className="flex flex-col items-center">
+                                        <Tooltip title="Re-upload Image">
+                                            <IconButton
+                                                onClick={() => document.getElementById("reuploadInput").click()}
+                                                sx={{ color: "#000", "&:hover": { backgroundColor: "rgba(0,0,0,0.06)" } }}
+                                            >
+                                                <CloudUploadIcon fontSize="medium" />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <span className="text-xs mt-1" style={{ color: "#000" }}>Re-upload</span>
+                                    </div>
+
+                                    <div className="flex flex-col items-center">
+                                        <Tooltip title="Remove Image">
+                                            <IconButton
+                                                onClick={() => { setImage(null); setCroppedAreaPixels(null); setCompressionInfo(null); }}
+                                                sx={{ color: "#000", "&:hover": { backgroundColor: "rgba(0,0,0,0.06)" } }}
+                                            >
+                                                <DeleteIcon fontSize="medium" />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <span className="text-xs mt-1" style={{ color: "#000" }}>Delete Image</span>
+                                    </div>
+
+                                    <div className="flex flex-col items-center">
+                                        <Tooltip title="Rotate Left">
+                                            <IconButton
+                                                onClick={handleRotateLeft}
+                                                sx={{ color: "#000", "&:hover": { backgroundColor: "rgba(0,0,0,0.06)" } }}
+                                            >
+                                                <RotateLeftIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <span className="text-xs mt-1" style={{ color: "#000" }}>Rotate Left</span>
+                                    </div>
+
+                                    <div className="flex flex-col items-center">
+                                        <Tooltip title="Rotate Right">
+                                            <IconButton
+                                                onClick={handleRotateRight}
+                                                sx={{ color: "#000", "&:hover": { backgroundColor: "rgba(0,0,0,0.06)" } }}
+                                            >
+                                                <RotateRightIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <span className="text-xs mt-1" style={{ color: "#000" }}>Rotate Right</span>
+                                    </div>
+
+                                    <div className="flex flex-col items-center">
+                                        <Tooltip title="Reset All Adjustments">
+                                            <IconButton
+                                                onClick={handleReset}
+                                                sx={{ color: "#000", "&:hover": { backgroundColor: "rgba(0,0,0,0.06)" } }}
+                                            >
+                                                <RestoreIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <span className="text-xs mt-1" style={{ color: "#000" }}>Reset</span>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div className="crop-container w-full h-[400px] md:h-[60vh] relative rounded-md overflow-hidden shadow-lg" style={{ backgroundColor: colors.space_cadet }}>
-                                <Cropper
-                                    image={image}
-                                    crop={crop}
-                                    zoom={zoom}
-                                    rotation={rotation}
-                                    aspect={aspect}
-                                    onCropChange={setCrop}
-                                    onZoomChange={setZoom}
-                                    onCropComplete={onCropComplete}
-                                />
-                            </div>
+                            {/* Download Button */}
+                            <button
+                                onClick={downloadImage}
+                                disabled={isDownloading}
+                                className="w-full mt-2 py-3 px-4 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
+                                style={{ background: "#000" }}
+                            >
+                                {isDownloading ? (
+                                    <span className="flex items-center gap-2">
+                                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                                        </svg>
+                                        Compressing...
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center gap-2">
+                                        <DownloadIcon /> Download Image
+                                    </span>
+                                )}
+                            </button>
 
-                            {/* Icon-based controls - No slider bars */}
-                            <div className="w-full mt-3 max-w-md mx-auto">
-                                <div className="p-4 rounded-lg" >
-                                    <div className="flex items-center justify-around">
-                                        <div className="flex flex-col items-center">
-                                            <Tooltip title="Re-upload Image">
-                                                <IconButton
-                                                    onClick={() => document.getElementById("reuploadInput").click()}
-                                                    sx={{ color: colors.ultra_violet, "&:hover": { backgroundColor: `${colors.ultra_violet}10` } }}
-                                                >
-                                                    <CloudUploadIcon fontSize="medium" />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <span className="text-xs mt-1" style={{ color: colors.ultra_violet }}>Re-upload</span>
-                                        </div>
-                                        <div className="flex flex-col items-center">
-                                            <Tooltip title="Remove Image">
-                                                <IconButton
-                                                    onClick={() => { setImage(null); setCroppedAreaPixels(null); }}
-                                                    sx={{ color: colors.rose_quartz, "&:hover": { backgroundColor: `${colors.rose_quartz}10` } }}
-                                                >
-                                                    <DeleteIcon fontSize="medium" />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <span className="text-xs mt-1" style={{ color: colors.ultra_violet }}>Delete Image</span>
-                                        </div>
+                            {/* Compression Info */}
+                            {compressionInfo && (
+                                <div
+                                    className="mt-4 p-4 rounded-xl border shadow-sm"
+                                    style={{
+                                        backgroundColor: "#dcfce7",
+                                        borderColor: "#22c55e"
+                                    }}
+                                >
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <span className="text-lg"></span>
+                                        <h3 className="font-bold text-base sm:text-lg" style={{ color: "#000" }}>
+                                            Image Compressed Successfully
+                                        </h3>
+                                    </div>
 
-                                        {/* Rotate Left */}
-                                        <div className="flex flex-col items-center">
-                                            <Tooltip title="Rotate Left">
-                                                <IconButton
-                                                    onClick={handleRotateLeft}
-                                                    sx={{ color: colors.ultra_violet, "&:hover": { backgroundColor: `${colors.ultra_violet}10` } }}
-                                                >
-                                                    <RotateLeftIcon />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <span className="text-xs mt-1" style={{ color: colors.ultra_violet }}>Rotate Left</span>
+                                    <div className="grid grid-cols-2 gap-3 text-sm sm:text-base">
+                                        <div className="bg-white rounded-lg p-3">
+                                            <p className="text-gray-500 text-xs mb-1">File Size</p>
+                                            <p className="font-semibold text-black">
+                                                {compressionInfo.originalSize}KB → {compressionInfo.compressedSize}KB
+                                            </p>
                                         </div>
 
-                                        {/* Rotate Right */}
-                                        <div className="flex flex-col items-center">
-                                            <Tooltip title="Rotate Right">
-                                                <IconButton
-                                                    onClick={handleRotateRight}
-                                                    sx={{ color: colors.ultra_violet, "&:hover": { backgroundColor: `${colors.ultra_violet}10` } }}
-                                                >
-                                                    <RotateRightIcon />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <span className="text-xs mt-1" style={{ color: colors.ultra_violet }}>Rotate Right</span>
-                                        </div>
-
-                                        {/* Reset */}
-                                        <div className="flex flex-col items-center">
-                                            <Tooltip title="Reset All Adjustments">
-                                                <IconButton
-                                                    onClick={handleReset}
-                                                    sx={{ color: colors.rose_quartz, "&:hover": { backgroundColor: `${colors.rose_quartz}10` } }}
-                                                >
-                                                    <RestoreIcon />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <span className="text-xs mt-1" style={{ color: colors.ultra_violet }}>Reset</span>
+                                        <div className="bg-white rounded-lg p-3">
+                                            <p className="text-gray-500 text-xs mb-1">Output Resolution</p>
+                                            <p className="font-semibold text-black">
+                                                {compressionInfo.width} × {compressionInfo.height}px
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
+                            )}
+                        </div>
 
-                                {/* Download Button */}
-                                <button
-                                    onClick={downloadImage}
-                                    className="w-full mt-2 py-3 px-4 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 flex items-center justify-center"
-                                    style={{
-                                        background: `linear-gradient(to right, ${colors.ultra_violet}, ${colors.space_cadet})`
-                                    }}
-                                >
-                                    <DownloadIcon className="mr-2" />
-                                    Download Image
-                                </button>
-                            </div>
-
-                            <input
-                                id="reuploadInput"
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImageUpload}
-                                className="hidden"
-                            />
-                        </>
-                    )}
-                </div>
+                        <input
+                            id="reuploadInput"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                        />
+                    </>
+                )}
             </div>
 
-            {/* Right Controls/Tools - 1 column on large screens */}
-            <div className="flex flex-col h-full bg-white shadow-inner p-5 md:p-6 overflow-y-auto" >
+            {/* Right Controls/Tools */}
+            <div className="flex flex-col h-full bg-white shadow-inner p-5 md:p-6 overflow-y-auto">
                 {/* Header */}
                 <div className="sticky top-0 bg-white pb-4 z-10 border-b" style={{ borderColor: `${colors.rose_quartz}50` }}>
-                    <h2 className="text-xl font-bold mb-2" style={{ color: colors.space_cadet }}>Editing Tools</h2>
+                    <h2 className="text-xl font-bold mb-2" style={{ color: "#000" }}>Editing Tools</h2>
                     <div className="flex space-x-4">
                         <button
                             className="py-2 px-4 font-medium text-sm flex items-center gap-1 border-b-2"
-                            style={{
-                                color: colors.ultra_violet,
-                                borderColor: colors.ultra_violet
-                            }}
+                            style={{ color: "#000", borderColor: "#000" }}
                         >
                             <AspectRatioIcon className="w-4 h-4" /> Crop & Resize
                         </button>
@@ -365,57 +468,40 @@ function ImageCropper() {
                 <div className="mt-4 flex-1 space-y-8">
                     {/* Aspect Ratios */}
                     <div>
-                        <h3 className="text-lg font-semibold mb-3" style={{ color: colors.space_cadet }}>Aspect Ratios</h3>
-                        <div className="grid grid-cols-3 gap-3">
-                            {/* Original */}
-                            <button
-                                key="Original"
-                                onClick={() => handleResolutionChange("Original")}
-                                className={`py-3 px-2 rounded-lg border font-medium text-center transition-all duration-200 flex flex-col items-center justify-center
-    ${selectedLabel === "Original"
-                                        ? "shadow-md ring-2"
-                                        : "hover:border-gray-200"}`}
-                            >
-                                <span className="text-xs font-medium">Original</span>
-                            </button>
-
-
-
-                            {/* Dynamic Ratios */}
-                            {resolutions.map(({ label, w, h }) => (
-                                <button
-                                    key={label}
-                                    onClick={() => handleResolutionChange(label, w, h)}
-                                    className={`py-3 px-2 rounded-lg border font-medium text-center transition-all duration-200 flex flex-col items-center justify-center
-              ${selectedLabel === label
-                                            ? "shadow-md ring-2"
-                                            : "hover:border-gray-200"}`}
-                                // style={{
-                                //     backgroundColor: selectedLabel === label ? `${colors.ultra_violet}10` : `${colors.isabelline}`,
-                                //     borderColor: selectedLabel === label ? colors.ultra_violet : `${colors.rose_quartz}50`,
-                                //     color: selectedLabel === label ? colors.ultra_violet : colors.space_cadet,
-                                //     ringColor: `${colors.ultra_violet}30`
-                                // }}
-                                >
-                                    <span className="block text-xs mt-1">{label}</span>
-                                </button>
+                        <h3 className="text-lg font-semibold mb-3" style={{ color: "#000" }}>Aspect Ratios</h3>
+                        <select
+                            value={selectedLabel}
+                            onChange={(e) => {
+                                const selected = resolutions.find(
+                                    (item) => item.label === e.target.value
+                                );
+                                if (selected.label === "Original") {
+                                    handleResolutionChange("Original");
+                                } else {
+                                    handleResolutionChange(selected.label, selected.w, selected.h);
+                                }
+                            }}
+                            className="w-full py-3 px-4 rounded-lg border border-gray-300 bg-white text-sm font-medium outline-none focus:ring-2 focus:ring-black"
+                            style={{ color: "#000" }}
+                        >
+                            {resolutions.map((item) => (
+                                <option key={item.label} value={item.label}>
+                                    {item.label}
+                                </option>
                             ))}
-                        </div>
+                        </select>
 
                         {/* Custom Dimensions */}
                         <div className="p-4 rounded-xl border mt-6" style={{
-                            backgroundColor: `${colors.ultra_violet}08`,
-                            borderColor: `${colors.ultra_violet}20`
+                            backgroundColor: "rgba(0,0,0,0.03)",
+                            borderColor: "rgba(0,0,0,0.1)"
                         }}>
-                            <h4 className="font-medium mb-3 flex items-center" style={{ color: colors.space_cadet }}>
-                                <AspectRatioIcon className="mr-2" style={{ color: colors.ultra_violet }} /> Custom Dimensions
+                            <h4 className="font-medium mb-3 flex items-center" style={{ color: "#000" }}>
+                                <AspectRatioIcon className="mr-2" style={{ color: "#000" }} /> Custom Dimensions
                             </h4>
                             <div className="grid grid-cols-2 gap-4">
-                                {/* Width */}
                                 <div>
-                                    <label className="block text-xs mb-1" style={{ color: colors.ultra_violet }}>
-                                        Width (px)
-                                    </label>
+                                    <label className="block text-xs mb-1" style={{ color: "#000" }}>Width (px)</label>
                                     <div className="relative">
                                         <input
                                             type="number"
@@ -423,20 +509,14 @@ function ImageCropper() {
                                             onChange={(e) => handleCustomDimensionChange("width", e.target.value)}
                                             placeholder="Width"
                                             className="w-full pl-3 pr-10 py-2 rounded-lg border bg-white placeholder-gray-400 focus:outline-none focus:ring-2"
-                                            style={{
-                                                borderColor: `${colors.rose_quartz}80`,
-                                                color: colors.space_cadet,
-                                            }}
+                                            style={{ borderColor: "rgba(0,0,0,0.2)", color: "#000" }}
                                         />
-                                        <span className="absolute right-3 top-2.5 text-xs" style={{ color: colors.ultra_violet }}>px</span>
+                                        <span className="absolute right-3 top-2.5 text-xs" style={{ color: "#000" }}>px</span>
                                     </div>
                                 </div>
 
-                                {/* Height */}
                                 <div>
-                                    <label className="block text-xs mb-1" style={{ color: colors.ultra_violet }}>
-                                        Height (px)
-                                    </label>
+                                    <label className="block text-xs mb-1" style={{ color: "#000" }}>Height (px)</label>
                                     <div className="relative">
                                         <input
                                             type="number"
@@ -444,12 +524,9 @@ function ImageCropper() {
                                             onChange={(e) => handleCustomDimensionChange("height", e.target.value)}
                                             placeholder="Height"
                                             className="w-full pl-3 pr-10 py-2 rounded-lg border bg-white placeholder-gray-400 focus:outline-none focus:ring-2"
-                                            style={{
-                                                borderColor: `${colors.rose_quartz}80`,
-                                                color: colors.space_cadet,
-                                            }}
+                                            style={{ borderColor: "rgba(0,0,0,0.2)", color: "#000" }}
                                         />
-                                        <span className="absolute right-3 top-2.5 text-xs" style={{ color: colors.ultra_violet }}>px</span>
+                                        <span className="absolute right-3 top-2.5 text-xs" style={{ color: "#000" }}>px</span>
                                     </div>
                                 </div>
                             </div>
@@ -458,22 +535,17 @@ function ImageCropper() {
 
                     {/* Output Settings */}
                     <div>
-                        <h3 className="text-lg font-semibold mb-3 flex items-center gap-2" style={{ color: colors.space_cadet }}>
-                            <SettingsIcon className="w-5 h-5" style={{ color: colors.ultra_violet }} /> Output Settings
+                        <h3 className="text-lg font-semibold mb-3 flex items-center gap-2" style={{ color: "#000" }}>
+                            <SettingsIcon className="w-5 h-5" style={{ color: "#000" }} /> Output Settings
                         </h3>
 
                         <div className="mb-4">
-                            <label className="text-sm font-medium block mb-2" style={{ color: colors.space_cadet }}>File Format</label>
+                            <label className="text-sm font-medium block mb-2" style={{ color: "#000" }}>File Format</label>
                             <select
                                 value={format}
                                 onChange={(e) => setFormat(e.target.value)}
                                 className="w-full pl-3 pr-10 py-2 rounded-lg border bg-white focus:outline-none focus:ring-2"
-                                style={{
-                                    borderColor: `${colors.rose_quartz}80`,
-                                    color: colors.space_cadet,
-                                    focusRingColor: colors.ultra_violet,
-                                    focusBorderColor: colors.ultra_violet
-                                }}
+                                style={{ borderColor: "rgba(0,0,0,0.2)", color: "#000" }}
                             >
                                 <option value="image/jpeg">JPG - Best for photos</option>
                                 <option value="image/png">PNG - Supports transparency</option>
@@ -481,21 +553,19 @@ function ImageCropper() {
                                 <option value="image/avif">AVIF - Best compression</option>
                             </select>
                         </div>
+
                         {/* Quality Slider */}
                         <div>
                             <div className="flex items-center justify-between mb-2">
-                                <label className="text-sm font-medium" style={{ color: colors.space_cadet }}>Quality</label>
-                                <span className="font-bold text-sm" style={{ color: colors.ultra_violet }}>{quality}%</span>
+                                <label className="text-sm font-medium" style={{ color: "#000" }}>Quality</label>
+                                <span className="font-bold text-sm" style={{ color: "#000" }}>{quality}%</span>
                             </div>
                             <div className="flex items-center gap-3 w-full">
                                 <div className="flex-1 relative h-6 flex items-center">
-                                    <div className="absolute w-full h-2 rounded-full" style={{ backgroundColor: `${colors.rose_quartz}40` }}></div>
+                                    <div className="absolute w-full h-2 rounded-full" style={{ backgroundColor: "rgba(0,0,0,0.12)" }}></div>
                                     <div
                                         className="absolute h-2 rounded-full"
-                                        style={{
-                                            width: `${quality}%`,
-                                            background: `linear-gradient(to right, ${colors.ultra_violet}, ${colors.space_cadet})`
-                                        }}
+                                        style={{ width: `${quality}%`, background: "#000" }}
                                     ></div>
                                     <input
                                         type="range"
@@ -509,17 +579,14 @@ function ImageCropper() {
                                     />
                                     <div
                                         className="absolute h-4 w-4 bg-white border-2 rounded-full shadow-md transform -translate-x-1/2 z-10 pointer-events-none transition-transform"
-                                        style={{
-                                            left: `${quality}%`,
-                                            borderColor: colors.ultra_violet
-                                        }}
+                                        style={{ left: `${quality}%`, borderColor: "#000" }}
                                     >
-                                        <div className="absolute inset-0 m-auto h-2 w-2 rounded-full" style={{ backgroundColor: colors.ultra_violet }}></div>
+                                        <div className="absolute inset-0 m-auto h-2 w-2 rounded-full" style={{ backgroundColor: "#000" }}></div>
                                     </div>
                                 </div>
                             </div>
                             {format === "image/png" && (
-                                <p className="text-xs mt-2 italic" style={{ color: colors.ultra_violet }}>
+                                <p className="text-xs mt-2 italic" style={{ color: "#000" }}>
                                     Quality adjustment is not available for PNG format
                                 </p>
                             )}

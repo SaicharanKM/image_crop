@@ -25,6 +25,8 @@ function downscaleImage(sourceCanvas, targetWidth, targetHeight) {
 
 
 // 🔹 Main crop + resize function
+// returnBlob = false → returns blob URL (default, for direct download)
+// returnBlob = true  → returns raw Blob (for API upload)
 export const getCroppedImg = (
   imageSrc,
   pixelCrop,
@@ -32,7 +34,8 @@ export const getCroppedImg = (
   targetHeight,
   format = "image/png",
   quality = 1,
-  rotation = 0
+  rotation = 0,
+  returnBlob = false
 ) => {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -118,6 +121,14 @@ export const getCroppedImg = (
             reject(new Error("Canvas is empty or toBlob failed"));
             return;
           }
+
+          // Return raw Blob for API upload
+          if (returnBlob) {
+            resolve(blob);
+            return;
+          }
+
+          // Return blob URL for direct download
           const blobUrl = URL.createObjectURL(blob);
           resolve(blobUrl);
 
