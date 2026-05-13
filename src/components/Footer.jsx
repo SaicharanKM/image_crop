@@ -5,11 +5,7 @@ import { faInstagram, faLinkedinIn } from "@fortawesome/free-brands-svg-icons";
 
 function Footer() {
     return (
-<<<<<<< Updated upstream
-        <footer className="footer w-full bg-[#0a0a0a] text-[#f5f0eb]">
-=======
         <footer className="w-full bg-[#0a0a0a] text-[#f5f0eb]">
->>>>>>> Stashed changes
             <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 py-12">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-10">
                     <div>
@@ -17,15 +13,9 @@ function Footer() {
                             <img
                                 src="/android-chrome-192x192.png"
                                 alt="PixFit Pro Logo"
-<<<<<<< Updated upstream
-                                className="w-10 h-10 mr-3 transition duration-300 ease-in-out hover:shadow-[0_0_10px_3px_rgba(255,255,255,0.8)]"
-                            />
-                            <h4 className="text-2xl font-bold text-[#f5f0eb]">PixFit</h4>
-=======
                                 className="w-10 h-10 mr-3 transition duration-300 ease-in-out hover:shadow-[0_0_10px_3px_rgba(255,255,255,0.8)] "
                             />
                             <h4 className="text-2xl font-bold text-amber-500 ">PixFit</h4>
->>>>>>> Stashed changes
                         </div>
                         <p className="text-sm text-[#b8b0a9] leading-relaxed">
                             Smart tools for precise image editing—crafted for creators and professionals.
@@ -67,11 +57,7 @@ function Footer() {
                                     href="https://www.instagram.com/sai.charan.km/"
                                     target="_blank"
                                     rel="noopener noreferrer"
-<<<<<<< Updated upstream
-                                    className="text-[#E1306C] hover:text-[#f5f0eb] transition"
-=======
                                     className="text-[#E1306C] hover:text-[#E1305c] transition"
->>>>>>> Stashed changes
                                 >
                                     <FontAwesomeIcon icon={faInstagram} size="lg" />
                                 </a>
@@ -81,11 +67,7 @@ function Footer() {
                                     href="https://www.linkedin.com/in/saicharankm/"
                                     target="_blank"
                                     rel="noopener noreferrer"
-<<<<<<< Updated upstream
-                                    className="text-[#0A66C2] hover:text-[#f5f0eb] transition"
-=======
                                     className="text-[#0A66C2] hover:text-[#0A66C1]  transition"
->>>>>>> Stashed changes
                                 >
                                     <FontAwesomeIcon icon={faLinkedinIn} size="lg" />
                                 </a>
@@ -127,11 +109,7 @@ function Footer() {
             </div>
 
             {/* Bottom bar */}
-<<<<<<< Updated upstream
-            <div className="border-t py-4 text-center text-sm text-[#b8b0a9]">
-=======
             <div className="border-t border-[#ffffff] py-4 text-center text-sm text-[#b8b0a9]">
->>>>>>> Stashed changes
                 <p>© {new Date().getFullYear()} PixFit Pro. All rights reserved.</p>
             </div>
         </footer>

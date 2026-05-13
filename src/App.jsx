@@ -5,44 +5,22 @@ import Features from './components/Features'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import ScrollToTop from './components/ScrollToTop'
-import PhotoEnhancer from './components/PhotoEnhancer'
 
 function App() {
   return (
     <>
-      {/* Scroll to top on every route change */}
       <ScrollToTop />
       <Navbar />
+
       <Routes>
         <Route path="/" element={<ImageCropper />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-<<<<<<< Updated upstream
-        <Route path="/features" element={<Features />} />
-        <Route path="/PhotoEnhancer" element={<PhotoEnhancer />}/>
-=======
         <Route path="/Features" element={<Features />} />
->>>>>>> Stashed changes
       </Routes>
+
       <Footer />
     </>
   )
 }
 
 export default App
-
-
-// App.jsx
-
-// App.jsx
-// import React from "react";
-// import PhotoEnhancer from "./components/PhotoEnhancer";
-
-// function App() {
-//   return (
-//     <div>
-//       <PhotoEnhancer />
-//     </div>
-//   );
-// }
-
-// export default App;
