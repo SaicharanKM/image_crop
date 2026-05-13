@@ -5,8 +5,12 @@ import { Menu, X } from "lucide-react";
 
 const navLinks = [
   { name: "Home", path: "/" },
+<<<<<<< Updated upstream
   {name:"HD Image Booster",path:"/PhotoEnhancer"},
   { name: "Features", path: "/features" },
+=======
+  { name: "Features", path: "/Features" },
+>>>>>>> Stashed changes
   { name: "Privacy Policy", path: "/privacy-policy" },
 ];
 
@@ -30,7 +34,11 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 h-full">
         <div className="flex items-center justify-between h-full">
           {/* Logo */}
+<<<<<<< Updated upstream
           <Link to="/" className="text-2xl font-bold text-amber-500">
+=======
+          <Link to="/" className="text-2xl font-bold text-amber-500 ">
+>>>>>>> Stashed changes
             PixFit
           </Link>
 
@@ -44,7 +52,11 @@ export default function Navbar() {
                   to={link.path}
                   className={`relative text-lg font-medium transition-colors duration-200 ${
                     isActive
+<<<<<<< Updated upstream
                       ? "text-amber-500"
+=======
+                      ? "text-amber-500 "
+>>>>>>> Stashed changes
                       : "text-[#e0e1dd] hover:text-[#778da9]"
                   }`}
                   aria-current={isActive ? "page" : undefined}
@@ -72,7 +84,11 @@ export default function Navbar() {
               aria-label={isOpen ? "Close menu" : "Open menu"}
               aria-expanded={isOpen}
               onClick={() => setIsOpen((s) => !s)}
+<<<<<<< Updated upstream
               className="p-2 rounded-md text-[#e0e1dd] hover:text-[#778da9] focus:outline-none focus:ring-2 focus:ring-amber-500"
+=======
+              className="p-2 rounded-md text-[#e0e1dd] hover:text-[#778da9] focus:outline-none focus:ring-2 focus:ring-amber-500 "
+>>>>>>> Stashed changes
             >
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -111,13 +127,21 @@ export default function Navbar() {
               <button
                 onClick={() => setIsOpen(false)}
                 aria-label="Close menu"
+<<<<<<< Updated upstream
                 className="absolute top-4 right-4 p-2 rounded-md text-[#778da9] hover:text-amber-500"
+=======
+                className="absolute top-4 right-4 p-2 rounded-md text-[#ffffff] hover:text-amber-500 "
+>>>>>>> Stashed changes
               >
                 <X className="h-6 w-6" />
               </button>
 
               {/* Links */}
+<<<<<<< Updated upstream
               <div className="w-full flex flex-col  mt-15">
+=======
+              <div className="w-full flex flex-col items-center mt-6">
+>>>>>>> Stashed changes
                 {navLinks.map((link, index) => {
                   const isActive = location.pathname === link.path;
                   return (
@@ -133,7 +157,11 @@ export default function Navbar() {
                         onClick={() => setIsOpen(false)}
                         className={`py-4 px-6 text-2xl font-semibold rounded-lg ${
                           isActive
+<<<<<<< Updated upstream
                             ? "text-amber-500"
+=======
+                            ? "text-amber-500 "
+>>>>>>> Stashed changes
                             : "text-[#e0e1dd] hover:text-[#778da9]"
                         }`}
                         aria-current={isActive ? "page" : undefined}

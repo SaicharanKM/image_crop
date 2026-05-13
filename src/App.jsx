@@ -16,8 +16,12 @@ function App() {
       <Routes>
         <Route path="/" element={<ImageCropper />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+<<<<<<< Updated upstream
         <Route path="/features" element={<Features />} />
         <Route path="/PhotoEnhancer" element={<PhotoEnhancer />}/>
+=======
+        <Route path="/Features" element={<Features />} />
+>>>>>>> Stashed changes
       </Routes>
       <Footer />
     </>
