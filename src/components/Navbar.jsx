@@ -5,7 +5,7 @@ import { Menu, X } from "lucide-react";
 
 const navLinks = [
   { name: "Home", path: "/" },
-  { name: "HD Image Booster", path: "/PhotoEnhancer" },
+  { name: "Clarity Enhancer", path: "/PhotoEnhancer" },
   { name: "Features", path: "/features" },
 ];
 
@@ -13,10 +13,12 @@ export default function Navbar() {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
 
+  // Close mobile menu on route change
   useEffect(() => {
     setIsOpen(false);
   }, [location]);
 
+  // Prevent scrolling when mobile menu is open
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
     return () => {
@@ -25,18 +27,21 @@ export default function Navbar() {
   }, [isOpen]);
 
   return (
-    <nav className="fixed top-0 w-full h-14 z-50  bg-black border-b border-white/10">
+    // Dark glassmorphism background
+    <nav className="fixed top-0 w-full h-[60px] z-50 bg-black/80 backdrop-blur-lg border-b border-white/10 font-sans transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 h-full">
         <div className="flex items-center justify-between h-full">
+          
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
             <img
               src="/favicon.svg"
               alt="PixFit Logo"
-              className="w-10 h-10 object-contain opacity-90 group-hover:opacity-100 transition"
+              className="w-9 h-9 object-contain  group-hover:scale-105 " 
+              // Note: 'brightness-0 invert' makes the SVG white. Remove if your SVG is already colored/white.
             />
-            <span className="text-xl font-semibold tracking-wide text-gray-100 group-hover:text-white transition">
-              𝙋𝙞𝙭𝙁𝙞𝙩
+            <span className="text-xl font-extrabold tracking-tight text-white transition-colors">
+              PixFit
             </span>
           </Link>
 
@@ -48,21 +53,22 @@ export default function Navbar() {
                 <Link
                   key={link.name}
                   to={link.path}
-                  className={`relative text-sm font-medium transition-colors duration-200 ${isActive
+                  className={`relative text-sm font-semibold transition-colors duration-200 py-2 ${
+                    isActive
                       ? "text-white"
-                      : "text-gray-300 hover:text-white"
-                    }`}
+                      : "text-gray-400 hover:text-white"
+                  }`}
                   aria-current={isActive ? "page" : undefined}
                 >
                   {link.name}
                   {isActive && (
                     <motion.span
                       layoutId="activeLink"
-                      className="absolute left-0 right-0 -bottom-1 h-[2px] bg-white/80 rounded-full"
+                      className="absolute left-0 right-0 -bottom-[19px] h-[3px] bg-white rounded-t-full"
                       transition={{
                         type: "spring",
-                        bounce: 0.25,
-                        duration: 0.4,
+                        bounce: 0.2,
+                        duration: 0.5,
                       }}
                     />
                   )}
@@ -72,12 +78,12 @@ export default function Navbar() {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center">
             <button
               aria-label={isOpen ? "Close menu" : "Open menu"}
               aria-expanded={isOpen}
               onClick={() => setIsOpen((s) => !s)}
-              className="p-2 rounded-md text-gray-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/60"
+              className="p-2 rounded-xl text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-white/20"
             >
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -93,14 +99,14 @@ export default function Navbar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl"
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl"
           >
             {/* Close button */}
             <button
               onClick={() => setIsOpen(false)}
               aria-label="Close menu"
-              className="absolute top-6 right-6 p-3 rounded-full bg-white/10 hover:bg-white/20 transition text-gray-200 focus:outline-none focus:ring-2 focus:ring-white"
+              className="absolute top-4 right-4 p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white focus:outline-none"
             >
               <X className="h-6 w-6" />
             </button>
@@ -108,33 +114,41 @@ export default function Navbar() {
             {/* Menu panel */}
             <motion.div
               key="mobile-panel"
-              initial={{ y: "-100%", opacity: 0 }}
+              initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: "-100%", opacity: 0 }}
-              transition={{ type: "spring", stiffness: 80, damping: 20 }}
-              className="h-full flex flex-col items-center justify-center space-y-10"
+              exit={{ y: -20, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 100, damping: 20 }}
+              className="h-full flex flex-col items-center justify-center space-y-8"
             >
+              {/* Mobile Logo */}
+              <div className="absolute top-10 flex flex-col items-center gap-3">
+                  <img src="/favicon.svg" alt="PixFit" className="w-12 h-12 brightness-0 invert" />
+                  <span className="font-extrabold text-white tracking-tight text-xl">PixFit</span>
+              </div>
+
               {navLinks.map((link, index) => {
                 const isActive = location.pathname === link.path;
                 return (
                   <motion.div
                     key={link.name}
-                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1, duration: 0.4 }}
                   >
                     <Link
                       to={link.path}
                       onClick={() => setIsOpen(false)}
-                      className={`relative group text-2xl font-semibold tracking-wide transition-colors duration-200 ${isActive ? "text-white" : "text-gray-300 hover:text-white"
-                        }`}
+                      className={`relative group text-3xl font-extrabold tracking-tight transition-colors duration-200 ${
+                        isActive ? "text-white" : "text-gray-500 hover:text-gray-300"
+                      }`}
                       aria-current={isActive ? "page" : undefined}
                     >
                       {link.name}
                       {/* Underline animation */}
                       <span
-                        className={`absolute left-0 right-0 -bottom-1 h-0.5 bg-white rounded-full transition-transform duration-300 origin-left ${isActive ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
-                          }`}
+                        className={`absolute left-0 right-0 -bottom-2 h-1 bg-white rounded-full transition-transform duration-300 origin-left ${
+                          isActive ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                        }`}
                       />
                     </Link>
                   </motion.div>
@@ -144,7 +158,6 @@ export default function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
-
     </nav>
   );
 }

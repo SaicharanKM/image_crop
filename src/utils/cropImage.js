@@ -1,19 +1,18 @@
-// 🔹 Helper function for high-quality resizing with devicePixelRatio
-function downscaleImage(sourceCanvas, targetWidth, targetHeight) {
-  const pixelRatio = window.devicePixelRatio || 1;
+// src/utils/cropImage.js
 
+// 🔹 Helper function for high-quality resizing
+function downscaleImage(sourceCanvas, targetWidth, targetHeight) {
   const finalCanvas = document.createElement("canvas");
-  finalCanvas.width = targetWidth * pixelRatio;
-  finalCanvas.height = targetHeight * pixelRatio;
-  finalCanvas.style.width = `${targetWidth}px`;
-  finalCanvas.style.height = `${targetHeight}px`;
+  
+  // FIX: Removed devicePixelRatio. 
+  // We want the downloaded file to exactly match the target dimensions.
+  finalCanvas.width = targetWidth;
+  finalCanvas.height = targetHeight;
 
   const ctx = finalCanvas.getContext("2d");
-  ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
 
-  // Important: drawImage scales from natural pixels → ensures high res
   ctx.drawImage(
     sourceCanvas,
     0, 0, sourceCanvas.width, sourceCanvas.height, // input (full crop)
@@ -23,7 +22,6 @@ function downscaleImage(sourceCanvas, targetWidth, targetHeight) {
   return finalCanvas;
 }
 
-
 // 🔹 Main crop + resize function
 export const getCroppedImg = (
   imageSrc,
@@ -32,7 +30,8 @@ export const getCroppedImg = (
   targetHeight,
   format = "image/png",
   quality = 1,
-  rotation = 0
+  rotation = 0,
+  returnBlob = false
 ) => {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -64,60 +63,65 @@ export const getCroppedImg = (
         -image.naturalHeight / 2
       );
 
-      // Scale factors (to account for natural size vs. displayed size)
-      const scaleX = image.naturalWidth / image.width;
-      const scaleY = image.naturalHeight / image.height;
-
-      // Step 1: Crop from rotated image (use natural pixels)
+      // Step 1: Crop from rotated image
       const croppedCanvas = document.createElement("canvas");
-      croppedCanvas.width = pixelCrop.width * scaleX;
-      croppedCanvas.height = pixelCrop.height * scaleY;
+      // React-easy-crop's pixelCrop is already in natural dimensions, no scaling needed
+      croppedCanvas.width = pixelCrop.width;
+      croppedCanvas.height = pixelCrop.height;
 
       const croppedCtx = croppedCanvas.getContext("2d");
       croppedCtx.drawImage(
         offCanvas,
-        pixelCrop.x * scaleX,
-        pixelCrop.y * scaleY,
-        pixelCrop.width * scaleX,
-        pixelCrop.height * scaleY,
+        pixelCrop.x,
+        pixelCrop.y,
+        pixelCrop.width,
+        pixelCrop.height,
         0,
         0,
         croppedCanvas.width,
         croppedCanvas.height
       );
 
-      // If custom dimensions are too small, keep natural crop resolution
+      // Step 2: Determine output resolution
       let outputWidth, outputHeight;
 
       if (targetWidth && targetHeight) {
-        // treat custom as "aspect ratio" not tiny size
-        const cropW = pixelCrop.width * scaleX;
-        const cropH = pixelCrop.height * scaleY;
+        // Handle custom dimensions maintaining aspect ratio
         const customRatio = targetWidth / targetHeight;
-        const cropRatio = cropW / cropH;
+        const cropRatio = pixelCrop.width / pixelCrop.height;
 
         if (customRatio > cropRatio) {
-          outputWidth = cropW;
-          outputHeight = cropW / customRatio;
+          outputWidth = pixelCrop.width;
+          outputHeight = pixelCrop.width / customRatio;
         } else {
-          outputWidth = cropH * customRatio;
-          outputHeight = cropH;
+          outputWidth = pixelCrop.height * customRatio;
+          outputHeight = pixelCrop.height;
         }
       } else {
-        // default (natural crop size)
-        outputWidth = Math.ceil(pixelCrop.width * scaleX);
-        outputHeight = Math.ceil(pixelCrop.height * scaleY);
+        // Default to natural crop size
+        outputWidth = pixelCrop.width;
+        outputHeight = pixelCrop.height;
       }
 
-      const finalCanvas = downscaleImage(croppedCanvas, outputWidth, outputHeight);
+      // Resize the image
+      const finalCanvas = downscaleImage(croppedCanvas, Math.ceil(outputWidth), Math.ceil(outputHeight));
 
       // Step 3: Export as Blob
       finalCanvas.toBlob(
         (blob) => {
+          // FIX: Add safety check to prevent createObjectURL from crashing if blob is null
           if (!blob) {
-            reject(new Error("Canvas is empty or toBlob failed"));
+            reject(new Error("Image resolution is too high for this device. Please try a smaller crop or lower resolution."));
             return;
           }
+
+          // Return raw Blob for size estimation and background processing
+          if (returnBlob) {
+            resolve(blob);
+            return;
+          }
+
+          // Return blob URL for direct rendering
           const blobUrl = URL.createObjectURL(blob);
           resolve(blobUrl);
 
@@ -129,6 +133,6 @@ export const getCroppedImg = (
       );
     };
 
-    image.onerror = () => reject(new Error("Image failed to load"));
+    image.onerror = () => reject(new Error("Image failed to load."));
   });
 };

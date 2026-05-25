@@ -1,4 +1,10 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import { IconButton, Tooltip } from '@mui/material';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DeleteIcon from '@mui/icons-material/Delete';
+import DownloadIcon from '@mui/icons-material/Download';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import CompareIcon from '@mui/icons-material/Compare';
 
 // --- Utility functions ---
 function clamp255(v) {
@@ -79,48 +85,41 @@ function PhotoEnhancer() {
   const [image, setImage] = useState(null);
   const [hdImage, setHdImage] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [hdEnabled, setHdEnabled] = useState(false);
-  const [sharpenAmount] = useState(1);
+  const [sharpenAmount, setSharpenAmount] = useState(0.5);
   const [dragActive, setDragActive] = useState(false);
+  const [isComparing, setIsComparing] = useState(false);
 
   const canvasRef = useRef(null);
+  const originalFileNameRef = useRef("photo");
 
+  // Draw the image to the canvas (handles responsive sizing)
   useEffect(() => {
     if (!image) return;
     const canvas = canvasRef.current;
+    if (!canvas) return;
+    
     const ctx = canvas.getContext("2d");
     const img = new Image();
-    img.src = hdEnabled && hdImage ? hdImage : image;
+    
+    // If we are holding the compare button, show the original
+    img.src = (hdImage && !isComparing) ? hdImage : image;
 
     img.onload = () => {
-      // fixed canvas size
-      const fixedWidth = 700;
-      const fixedHeight = 500;
-      canvas.width = fixedWidth;
-      canvas.height = fixedHeight;
-
-      ctx.clearRect(0, 0, fixedWidth, fixedHeight);
-      ctx.fillStyle = "#161616";
-      ctx.fillRect(0, 0, fixedWidth, fixedHeight);
-
+      // Make canvas match the image aspect ratio
+      canvas.width = img.width;
+      canvas.height = img.height;
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
       if (loading) {
-        ctx.filter = "blur(6px)";
+        ctx.filter = "blur(8px)";
       } else {
         ctx.filter = "none";
       }
 
-      // keep aspect ratio
-      const scale = Math.min(fixedWidth / img.width, fixedHeight / img.height);
-      const newWidth = img.width * scale;
-      const newHeight = img.height * scale;
-
-      // center image
-      const offsetX = (fixedWidth - newWidth) / 2;
-      const offsetY = (fixedHeight - newHeight) / 2;
-
-      ctx.drawImage(img, offsetX, offsetY, newWidth, newHeight);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     };
-  }, [image, hdImage, hdEnabled, loading]);
+  }, [image, hdImage, loading, isComparing]);
 
   // File upload + drag & drop
   const handleFileUpload = useCallback((event) => {
@@ -130,163 +129,208 @@ function PhotoEnhancer() {
       file = event.dataTransfer.files[0];
     else if (event.target.files && event.target.files.length)
       file = event.target.files[0];
+    
     if (!file) return;
 
+    originalFileNameRef.current = file.name.split('.')[0] || "photo";
+
     const reader = new FileReader();
-    reader.onload = () => setImage(reader.result);
+    reader.onload = () => {
+        setImage(reader.result);
+        setHdImage(null); // Reset when new image is uploaded
+    };
     reader.readAsDataURL(file);
-
-    setHdEnabled(false);
-    setHdImage(null);
     setDragActive(false);
   }, []);
 
-  // Drag events
-  const handleDragEnter = useCallback((e) => {
-    e.preventDefault();
-    setDragActive(true);
-  }, []);
-  const handleDragLeave = useCallback((e) => {
-    e.preventDefault();
-    setDragActive(false);
-  }, []);
-  const handleDrop = useCallback((e) => {
-    handleFileUpload(e);
-    setDragActive(false);
-  }, [handleFileUpload]);
+  const handleDragEnter = useCallback((e) => { e.preventDefault(); setDragActive(true); }, []);
+  const handleDragLeave = useCallback((e) => { e.preventDefault(); setDragActive(false); }, []);
+  const handleDrop = useCallback((e) => { handleFileUpload(e); setDragActive(false); }, [handleFileUpload]);
 
-  // Toggle HD with delay + loader
-  const toggleHD = useCallback(async () => {
+  // Trigger the enhancement process
+  const applyEnhancement = async () => {
     if (!image || loading) return;
-
-    if (hdEnabled) {
-      setHdEnabled(false);
-      setHdImage(null);
-      return;
-    }
 
     try {
       setLoading(true);
-      const result = await enhanceToDataURL(image, sharpenAmount);
-
-      // wait 1 second before applying result
-      setTimeout(() => {
-        setHdImage(result);
-        setHdEnabled(true);
-        setLoading(false);
-      }, 1000);
-    } catch {
+      // Small timeout to allow the UI to update the loading state before the heavy thread blocking begins
+      setTimeout(async () => {
+          const result = await enhanceToDataURL(image, sharpenAmount);
+          setHdImage(result);
+          setLoading(false);
+      }, 50);
+    } catch (err) {
+      console.error("Enhancement failed", err);
       setLoading(false);
+      alert("Failed to process image. It might be too large.");
     }
-  }, [image, hdEnabled, loading, sharpenAmount]);
+  };
 
   // Download HD image
   const downloadHD = () => {
+    if (!hdImage) return;
     const link = document.createElement("a");
     link.href = hdImage;
-    link.download = "enhanced-photo.png";
+    link.download = `${originalFileNameRef.current}_Enhanced.png`;
     link.click();
   };
 
+  const handleReset = () => {
+      setImage(null);
+      setHdImage(null);
+      setSharpenAmount(0.5);
+  };
+
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-black via-gray-900 to-black text-white">
-      <div className="w-full max-w-3xl flex flex-col gap-6">
-        <h1 className="text-3xl font-bold text-center">Photo Enhancer</h1>
-
-        {/* Upload Area */}
-        {!image && (
-          <div
-            className={`flex flex-col items-center justify-center w-full h-76 border-2 border-dashed rounded-xl cursor-pointer transition ${dragActive
-                ? "border-blue-600 bg-black/60"
-                : "border-gray-500 bg-gray-950 hover:border-white"
-              }`}
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={handleDrop}
-          >
-            <label
-              htmlFor="file-input"
-              className="flex flex-col items-center gap-2 py-8"
+    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-[#F7F7F9] mt-[60px] font-sans">
+      
+      {/* Left: Canvas/Preview Area */}
+      <div className="flex-1 flex flex-col justify-center items-center p-4 md:p-8 relative">
+        {!image ? (
+            <div
+                className={`w-full max-w-3xl mx-auto p-8 min-h-[400px] md:min-h-[65vh] rounded-3xl flex flex-col items-center justify-center text-center transition-all duration-300 ease-in-out border-2 border-dashed
+                ${dragActive 
+                    ? "border-black bg-gray-100 scale-[1.02]" 
+                    : "border-gray-300 bg-white hover:border-gray-400"
+                }`}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
             >
-              {/* SVG Icon */}
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              <span className="font-medium text-lg">
-                {dragActive ? "Drop image to upload" : "Click or Drag & Drop to Upload"}
-              </span>
-              <span className="text-white/80 text-sm">
-                Supported: JPEG, PNG, GIF • Max size: 10MB
-              </span>
-              <input
-                id="file-input"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileUpload}
-              />
-            </label>
-            <p className="text-sm text-gray-400 mt-2 text-center max-w-lg">
-              Your image is private and processed locally for fast results.
-            </p>
-          </div>
-        )}
-
-        {/* Preview Area */}
-        {image && (
-          <div className="relative border border-gray-700 rounded-xl overflow-hidden bg-black flex items-center justify-center shadow-lg">
-            <canvas
-              ref={canvasRef}
-              className="w-full max-w-[700px] h-[300px] sm:h-[500px] object-contain rounded-xl"
-              aria-label="Image Preview"
-            />
-            {/* Loader */}
-            {loading && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm z-10">
-                {/* Animated Loader */}
-                <div className="relative flex flex-col items-center gap-2">
-                  <div className="w-16 h-16 border-4 border-white/40 border-t-blue-400 rounded-full animate-spin" />
-                  <span className="text-white text-md font-semibold mt-2">Enhancing...</span>
+                <div className="w-20 h-20 rounded-2xl bg-gray-50 flex items-center justify-center mb-6 shadow-sm border border-gray-100">
+                    <AutoFixHighIcon className="text-gray-800 text-4xl" />
                 </div>
-              </div>
-            )}
-
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-row gap-3 w-full max-w-[95%] justify-center">
-              <button
-                onClick={toggleHD}
-                disabled={loading}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold border transition duration-200 ${hdEnabled
-                    ? "bg-blue-600 text-white border-blue-400 shadow-md"
-                    : "bg-black/80 text-white border-white hover:bg-white hover:text-black"
-                  }`}
-              >
-                {hdEnabled ? "HD Enabled" : "Enhance to HD"}
-              </button>
-
-              {hdEnabled && (
-                <>
-                  <button
-                    onClick={downloadHD}
-                    className="px-4 py-2 rounded-lg text-sm font-semibold border border-green-500 bg-black/80 text-white hover:bg-green-500 hover:text-black transition"
-                  >
-                    Download HD
-                  </button>
-                  <button
-                    onClick={() => {
-                      setImage(null);
-                      setHdImage(null);
-                      setHdEnabled(false);
-                    }}
-                    className="px-4 py-2 rounded-lg text-sm font-semibold border border-red-500 bg-black/80 text-white hover:bg-red-500 hover:text-white transition"
-                  >
-                    Delete
-                  </button>
-                </>
-              )}
+                
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight mb-2">
+                    Enhance your photo
+                </h2>
+                <p className="text-gray-500 mb-8 max-w-md">
+                    Upload a blurry or soft image to instantly sharpen and clarify it locally in your browser.
+                </p>
+                
+                <label
+                    htmlFor="file-input"
+                    className="px-8 py-4 bg-black text-white text-base font-semibold rounded-full cursor-pointer hover:bg-gray-800 transition-colors shadow-md active:scale-95"
+                >
+                    Browse Files
+                </label>
+                <input id="file-input" type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
             </div>
-          </div>
+        ) : (
+            <div className="w-full max-w-5xl mx-auto flex flex-col items-center">
+                {/* Editor Canvas Container */}
+                <div className="w-full relative rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.08)] bg-white border border-gray-200 flex justify-center items-center min-h-[300px]">
+                    <canvas
+                        ref={canvasRef}
+                        className="max-w-full max-h-[65vh] object-contain transition-opacity duration-300"
+                        style={{ opacity: loading ? 0.5 : 1 }}
+                    />
+                    
+                    {loading && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/50 backdrop-blur-sm z-10">
+                            <svg className="animate-spin h-10 w-10 text-black mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                            </svg>
+                            <span className="text-gray-900 font-bold tracking-wide">Processing...</span>
+                        </div>
+                    )}
+
+                    {/* Compare Overlay Indicator */}
+                    {isComparing && hdImage && (
+                         <div className="absolute top-4 right-4 bg-black/80 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg backdrop-blur-md">
+                             Original Image
+                         </div>
+                    )}
+                </div>
+
+                {/* Minimalist Floating Toolbar */}
+                <div className="mt-6 bg-white px-6 py-3 rounded-full shadow-sm border border-gray-200 flex items-center justify-center gap-2 md:gap-6">
+                    <Tooltip title="Upload New">
+                        <IconButton onClick={() => document.getElementById("file-input").click()} sx={{ color: "#374151" }}>
+                            <CloudUploadIcon />
+                        </IconButton>
+                    </Tooltip>
+                    
+                    {hdImage && (
+                        <Tooltip title="Hold to Compare">
+                            <IconButton 
+                                onMouseDown={() => setIsComparing(true)} 
+                                onMouseUp={() => setIsComparing(false)}
+                                onMouseLeave={() => setIsComparing(false)}
+                                onTouchStart={() => setIsComparing(true)}
+                                onTouchEnd={() => setIsComparing(false)}
+                                sx={{ color: isComparing ? "#000" : "#374151" }}
+                            >
+                                <CompareIcon />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+
+                    <div className="w-px h-8 bg-gray-200 mx-2"></div>
+                    
+                    <Tooltip title="Delete Image">
+                        <IconButton onClick={handleReset} sx={{ color: "#EF4444" }}>
+                            <DeleteIcon />
+                        </IconButton>
+                    </Tooltip>
+                </div>
+            </div>
         )}
+      </div>
+
+      {/* Right: Floating Control Card */}
+      <div className={`w-full lg:w-[420px] bg-white lg:my-6 lg:mr-6 lg:rounded-[2rem] lg:shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 flex flex-col transition-opacity duration-300 ${!image ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+          <div className="p-6 md:p-8 flex-1 overflow-y-auto">
+              <div className="mb-8">
+                  <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
+                      <AutoFixHighIcon /> Clarity
+                  </h2>
+                  <p className="text-sm text-gray-500 mt-1">Adjust the intensity of the sharpening filter.</p>
+              </div>
+
+              {/* Slider Control */}
+              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 mb-8">
+                  <div className="flex justify-between items-center mb-4">
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Intensity</label>
+                      <span className="font-bold text-gray-900">{Math.round(sharpenAmount * 100)}%</span>
+                  </div>
+                  
+                  <input
+                      type="range"
+                      min={0.1}
+                      max={1.5}
+                      step={0.1}
+                      value={sharpenAmount}
+                      onChange={(e) => setSharpenAmount(parseFloat(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-2">
+                      <span>Soft</span>
+                      <span>Extreme</span>
+                  </div>
+
+                  <button
+                      onClick={applyEnhancement}
+                      disabled={loading}
+                      className="w-full mt-6 py-3 px-4 bg-white border-2 border-black text-black text-sm font-bold rounded-xl shadow-sm hover:bg-gray-50 transition-all disabled:opacity-50"
+                  >
+                      Apply Filter
+                  </button>
+              </div>
+          </div>
+
+          {/* Fixed Action Bottom Area */}
+          <div className="p-6 border-t border-gray-100 bg-white lg:rounded-b-[2rem]">
+              <button
+                  onClick={downloadHD}
+                  disabled={!hdImage || loading}
+                  className="w-full py-4 px-6 bg-black text-white text-base font-bold rounded-2xl shadow-lg hover:bg-gray-800 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                  <DownloadIcon /> Export Enhanced Image
+              </button>
+          </div>
       </div>
     </div>
   );
