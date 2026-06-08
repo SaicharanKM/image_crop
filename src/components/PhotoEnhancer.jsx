@@ -153,7 +153,6 @@ function PhotoEnhancer() {
 
     try {
       setLoading(true);
-      // Small timeout to allow the UI to update the loading state before the heavy thread blocking begins
       setTimeout(async () => {
           const result = await enhanceToDataURL(image, sharpenAmount);
           setHdImage(result);
@@ -182,119 +181,123 @@ function PhotoEnhancer() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-[#F7F7F9] mt-[60px] font-sans">
+    // Integrated high-end signature background gradient matching the brand template setup
+    <div className="min-h-screen w-full flex flex-col lg:flex-row  bg-[#e8edec]  mt-[60px] font-sans antialiased">
       
-      {/* Left: Canvas/Preview Area */}
-      <div className="flex-1 flex flex-col justify-center items-center p-4 md:p-8 relative">
+      {/* Left: Responsive Dynamic Studio Preview Canvas Panel */}
+      <div className="flex-1 flex flex-col justify-center items-center p-5 md:p-10 relative">
         {!image ? (
+            /* Glassmorphic Minimalist Dropzone Panel Container */
             <div
-                className={`w-full max-w-3xl mx-auto p-8 min-h-[400px] md:min-h-[65vh] rounded-3xl flex flex-col items-center justify-center text-center transition-all duration-300 ease-in-out border-2 border-dashed
+                className={`w-full max-w-2xl mx-auto p-12 min-h-[420px] md:min-h-[65vh] rounded-[2rem] flex flex-col items-center justify-center text-center transition-all duration-300  bg-[#e8edec]  backdrop-blur-md border border-white/50 shadow-[0_20px_50px_rgba(0,0,0,0.02)]
                 ${dragActive 
-                    ? "border-black bg-gray-100 scale-[1.02]" 
-                    : "border-gray-300 bg-white hover:border-gray-400"
+                    ? "border-black/40 bg-white/60 scale-[1.01]" 
+                    : "hover:shadow-[0_25px_50px_rgba(0,0,0,0.04)]"
                 }`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDrop}
             >
-                <div className="w-20 h-20 rounded-2xl bg-gray-50 flex items-center justify-center mb-6 shadow-sm border border-gray-100">
-                    <AutoFixHighIcon className="text-gray-800 text-4xl" />
+                <div className="w-16 h-16 rounded-2xl bg-white/60 flex items-center justify-center mb-6 border border-white/80 shadow-sm">
+                    <AutoFixHighIcon className="text-gray-900 text-2xl" />
                 </div>
                 
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight mb-2">
-                    Enhance your photo
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight mb-3">
+                    Enhance Clarity
                 </h2>
-                <p className="text-gray-500 mb-8 max-w-md">
-                    Upload a blurry or soft image to instantly sharpen and clarify it locally in your browser.
+                <p className="text-gray-600/80 text-sm font-medium max-w-sm leading-relaxed mb-8">
+                    Upload soft, compressed, or blurry photos to re-clarify edge details natively inside your secure digital browser workstation.
                 </p>
                 
                 <label
                     htmlFor="file-input"
-                    className="px-8 py-4 bg-black text-white text-base font-semibold rounded-full cursor-pointer hover:bg-gray-800 transition-colors shadow-md active:scale-95"
+                    className="px-8 py-3 bg-[#318584] hover:bg-[#286f6e] text-white text-xs font-bold rounded-full cursor-pointer tracking-wider uppercase transition-all shadow-md active:scale-[0.98]"
                 >
-                    Browse Files
+                    Select Local Image
                 </label>
                 <input id="file-input" type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
             </div>
         ) : (
-            <div className="w-full max-w-5xl mx-auto flex flex-col items-center">
-                {/* Editor Canvas Container */}
-                <div className="w-full relative rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.08)] bg-white border border-gray-200 flex justify-center items-center min-h-[300px]">
+            <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
+                
+                {/* Active Dynamic Rendering Viewport Container */}
+                <div className="w-full relative rounded-[2rem] overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.06)] bg-white border border-white/40 flex justify-center items-center min-h-[320px]">
                     <canvas
                         ref={canvasRef}
-                        className="max-w-full max-h-[65vh] object-contain transition-opacity duration-300"
-                        style={{ opacity: loading ? 0.5 : 1 }}
+                        className="max-w-full max-h-[62vh] object-contain transition-opacity duration-300"
+                        style={{ opacity: loading ? 0.4 : 1 }}
                     />
                     
                     {loading && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/50 backdrop-blur-sm z-10">
-                            <svg className="animate-spin h-10 w-10 text-black mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/40 backdrop-blur-sm z-10">
+                            <svg className="animate-spin h-8 w-8 text-black mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
                             </svg>
-                            <span className="text-gray-900 font-bold tracking-wide">Processing...</span>
+                            <span className="text-gray-900 text-xs font-bold tracking-wider uppercase">Re-mapping Pixels...</span>
                         </div>
                     )}
 
-                    {/* Compare Overlay Indicator */}
+                    {/* Compare Overlay Status Indicator */}
                     {isComparing && hdImage && (
-                         <div className="absolute top-4 right-4 bg-black/80 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg backdrop-blur-md">
-                             Original Image
+                         <div className="absolute top-4 right-4 bg-black/80 text-white text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full shadow-md backdrop-blur-md border border-white/10">
+                             Original Reference View
                          </div>
                     )}
                 </div>
 
-                {/* Minimalist Floating Toolbar */}
-                <div className="mt-6 bg-white px-6 py-3 rounded-full shadow-sm border border-gray-200 flex items-center justify-center gap-2 md:gap-6">
-                    <Tooltip title="Upload New">
-                        <IconButton onClick={() => document.getElementById("file-input").click()} sx={{ color: "#374151" }}>
-                            <CloudUploadIcon />
+                {/* Frost Glassmorphic Floating Toolbar Station Dock */}
+                <div className="mt-6 bg-white/40 backdrop-blur-md px-6 py-1.5 rounded-full shadow-[0_12px_35px_rgba(0,0,0,0.03)] border border-white/60 flex items-center justify-center gap-1 md:gap-4">
+                    <Tooltip title="Upload Alternative File" enterDelay={300}>
+                        <IconButton onClick={() => document.getElementById("file-input").click()} sx={{ color: "#111827", padding: "8px" }}>
+                            <CloudUploadIcon fontSize="small" />
                         </IconButton>
                     </Tooltip>
                     
                     {hdImage && (
-                        <Tooltip title="Hold to Compare">
+                        <Tooltip title="Hold Down to View Original" enterDelay={300}>
                             <IconButton 
                                 onMouseDown={() => setIsComparing(true)} 
                                 onMouseUp={() => setIsComparing(false)}
                                 onMouseLeave={() => setIsComparing(false)}
                                 onTouchStart={() => setIsComparing(true)}
                                 onTouchEnd={() => setIsComparing(false)}
-                                sx={{ color: isComparing ? "#000" : "#374151" }}
+                                sx={{ color: isComparing ? "#318584" : "#111827", padding: "8px" }}
                             >
-                                <CompareIcon />
+                                <CompareIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
                     )}
 
-                    <div className="w-px h-8 bg-gray-200 mx-2"></div>
+                    <div className="w-px h-5 bg-black/10 mx-1"></div>
                     
-                    <Tooltip title="Delete Image">
-                        <IconButton onClick={handleReset} sx={{ color: "#EF4444" }}>
-                            <DeleteIcon />
+                    <Tooltip title="Clear Photo Workspace" enterDelay={300}>
+                        <IconButton onClick={handleReset} sx={{ color: "#dc2626", padding: "8px" }}>
+                            <DeleteIcon fontSize="small" />
                         </IconButton>
                     </Tooltip>
                 </div>
+                <input id="file-input" type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
             </div>
         )}
       </div>
 
-      {/* Right: Floating Control Card */}
-      <div className={`w-full lg:w-[420px] bg-white lg:my-6 lg:mr-6 lg:rounded-[2rem] lg:shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 flex flex-col transition-opacity duration-300 ${!image ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
-          <div className="p-6 md:p-8 flex-1 overflow-y-auto">
-              <div className="mb-8">
+      {/* Right: Architectural Studio Control Panel Column Sidebar Sheet */}
+      <div className={`w-full lg:w-[420px] bg-white/40 backdrop-blur-xl border-l border-white/40 flex flex-col transition-all duration-300 ${!image ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+          <div className="p-6 md:p-8 flex-1 overflow-y-auto space-y-10">
+              <div>
                   <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
-                      <AutoFixHighIcon /> Clarity
+                      <AutoFixHighIcon className="text-gray-900" /> Filter Engine
                   </h2>
-                  <p className="text-sm text-gray-500 mt-1">Adjust the intensity of the sharpening filter.</p>
+                  <p className="text-xs text-gray-500 mt-1">Configure your local convolution matrix filter parameters.</p>
               </div>
 
-              {/* Slider Control */}
-              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 mb-8">
+              {/* Functional Convolution Slider Matrix Box */}
+              <div className="bg-white/50 p-6 rounded-2xl border border-white/70">
                   <div className="flex justify-between items-center mb-4">
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Intensity</label>
-                      <span className="font-bold text-gray-900">{Math.round(sharpenAmount * 100)}%</span>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Quantization Power</label>
+                      <span className="font-extrabold text-xs bg-black/5 px-2 py-0.5 rounded text-gray-900">{Math.round(sharpenAmount * 100)}%</span>
                   </div>
                   
                   <input
@@ -304,31 +307,31 @@ function PhotoEnhancer() {
                       step={0.1}
                       value={sharpenAmount}
                       onChange={(e) => setSharpenAmount(parseFloat(e.target.value))}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+                      className="w-full h-1.5 bg-black/5 rounded-lg appearance-none cursor-pointer accent-black transition-all"
                   />
-                  <div className="flex justify-between text-xs text-gray-400 mt-2">
-                      <span>Soft</span>
-                      <span>Extreme</span>
+                  <div className="flex justify-between text-[10px] font-semibold text-gray-400 mt-2.5 uppercase tracking-wider">
+                      <span>Soft Blend</span>
+                      <span>Extreme Edge</span>
                   </div>
 
                   <button
                       onClick={applyEnhancement}
                       disabled={loading}
-                      className="w-full mt-6 py-3 px-4 bg-white border-2 border-black text-black text-sm font-bold rounded-xl shadow-sm hover:bg-gray-50 transition-all disabled:opacity-50"
+                      className="w-full mt-6 py-2.5 px-4 bg-white border border-gray-200 text-gray-900 text-xs font-bold uppercase tracking-wider rounded-xl shadow-sm hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-50"
                   >
-                      Apply Filter
+                      Execute Calculations
                   </button>
               </div>
           </div>
 
-          {/* Fixed Action Bottom Area */}
-          <div className="p-6 border-t border-gray-100 bg-white lg:rounded-b-[2rem]">
+          {/* Integrated Action Button Footer Base Frame */}
+          <div className="p-6 bg-white/30 border-t border-white/40">
               <button
                   onClick={downloadHD}
                   disabled={!hdImage || loading}
-                  className="w-full py-4 px-6 bg-black text-white text-base font-bold rounded-2xl shadow-lg hover:bg-gray-800 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  className="w-full py-3.5 px-6 bg-gradient-to-tr from-[#E1E6E7] via-[#D3DFE0] to-[#BCE4E1] text-white text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 shadow-md active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed disabled:transform-none"
               >
-                  <DownloadIcon /> Export Enhanced Image
+                  <DownloadIcon className="text-sm" /> Commit & Save Enhanced Asset
               </button>
           </div>
       </div>

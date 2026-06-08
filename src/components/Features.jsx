@@ -81,7 +81,7 @@ const Features = () => {
               aria-labelledby={`feature-title-${idx}`}
             >
               {/* Icon Container with Hover Effect */}
-              <div className="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-2xl mb-6 text-2xl text-gray-900 group-hover:bg-black group-hover:text-white transition-colors duration-300">
+              <div className="w-16 h-16 flex items-center justify-center bg-gray-50 rounded-2xl mb-6 text-2xl text-gray-900  transition-colors duration-300">
                 {feature.icon}
               </div>
               
